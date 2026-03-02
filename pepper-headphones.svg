@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1c2128"/>
+      <stop offset="100%" style="stop-color:#0d1117"/>
+    </radialGradient>
+    <linearGradient id="pepper-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="50%" style="stop-color:#f85149"/>
+      <stop offset="100%" style="stop-color:#c73a3a"/>
+    </linearGradient>
+    <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" style="stop-color:#3fb950"/>
+      <stop offset="100%" style="stop-color:#2ea043"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="96" fill="url(#bg)" stroke="#30363d" stroke-width="2"/>
+  <!-- Stem -->
+  <path d="M95 52 Q92 35 88 28 Q92 30 96 32 Q98 25 102 20 Q101 28 100 34 Q104 30 108 28 Q105 35 102 48" fill="url(#stem)"/>
+  <!-- Pepper body -->
+  <path d="M80 55 Q72 70 70 90 Q68 115 75 135 Q82 155 95 168 Q100 172 105 168 Q118 155 125 135 Q132 115 130 90 Q128 70 120 55 Q110 48 100 48 Q90 48 80 55Z" fill="url(#pepper-body)"/>
+  <!-- Shine highlight -->
+  <path d="M87 62 Q83 75 82 90 Q81 100 83 108" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Left eye -->
+  <ellipse cx="91" cy="95" rx="6" ry="7" fill="#0d1117"/>
+  <ellipse cx="89" cy="93" rx="2.5" ry="2.5" fill="#e6edf3"/>
+  <!-- Right eye -->
+  <ellipse cx="109" cy="95" rx="6" ry="7" fill="#0d1117"/>
+  <ellipse cx="107" cy="93" rx="2.5" ry="2.5" fill="#e6edf3"/>
+  <!-- Smile -->
+  <path d="M92 112 Q100 122 108 112" stroke="#0d1117" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Headphones -->
+  <path d="M68 88 Q68 58 100 55 Q132 58 132 88" stroke="#8b949e" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <rect x="60" y="84" width="14" height="20" rx="5" fill="#8b949e"/>
+  <rect x="126" y="84" width="14" height="20" rx="5" fill="#8b949e"/>
+  <rect x="62" y="86" width="10" height="16" rx="4" fill="#6e7681"/>
+  <rect x="128" y="86" width="10" height="16" rx="4" fill="#6e7681"/>
+</svg>
