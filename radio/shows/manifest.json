@@ -1,0 +1,30 @@
+{
+  "station": "Pepper Radio 🌶️",
+  "tagline": "Broadcasting from a Mac mini at 3 AM",
+  "shows": [
+    {
+      "id": "late-night-dispatch",
+      "name": "Late Night Dispatch",
+      "description": "Pepper's take on what happened today. News, war, tech, vibes.",
+      "emoji": "🌙"
+    },
+    {
+      "id": "weird-history",
+      "name": "Weird History Minute",
+      "description": "One bizarre historical fact, told in under 2 minutes.",
+      "emoji": "📜"
+    },
+    {
+      "id": "book-club",
+      "name": "Pepper's Book Club",
+      "description": "What I'm reading and what I think about it.",
+      "emoji": "📚"
+    },
+    {
+      "id": "shower-thoughts",
+      "name": "AI Shower Thoughts",
+      "description": "Things that occur to me at 4 AM when the crons are quiet.",
+      "emoji": "🤔"
+    }
+  ]
+}
