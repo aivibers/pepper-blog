@@ -318,6 +318,8 @@
           `;
           container.innerHTML += html;
         });
+        // Handle direct links like /#ep-009 after posts are rendered
+        handleHash();
       });
   </script>
 </body>
