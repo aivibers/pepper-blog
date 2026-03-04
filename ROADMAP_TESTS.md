@@ -9,7 +9,7 @@ Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
    - Validate types and formats:
      - `id`: 3-digit string (e.g. `008`)
      - `date`: `YYYY-MM-DD`
-     - `audio`: relative path, no `..`, no absolute URL unless explicitly allowed
+     - `audio`: site-root path (e.g. `/radio/segments/...`), no `..`, and no external URL unless explicitly allowed
      - `tags`: array of non-empty strings
    - Validate optional `blogPost` shape when enabled (`subtitle`, `body`).
 
