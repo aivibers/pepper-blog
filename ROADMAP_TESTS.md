@@ -2,6 +2,8 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
+_Last reviewed: 2026-03-05 (pre-morning maintenance pass)._
+
 ## P0 (do first)
 
 1. **episodes.json schema validation (unit)**
