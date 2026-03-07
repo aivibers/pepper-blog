@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-05 (pre-morning maintenance pass)._
+_Last reviewed: 2026-03-07 (pre-morning maintenance pass)._
 
 ## P0 (do first)
 
@@ -25,6 +25,7 @@ _Last reviewed: 2026-03-05 (pre-morning maintenance pass)._
    - For every episode with `audio`, assert file exists at `radio/segments/...`.
    - Assert no broken relative paths in local references from `episodes.json` and blog body markdown links.
    - Assert no malformed feed URLs (e.g. accidental double slashes in enclosure path after domain).
+   - Add anchor integrity check for `/#ep-<id>` links in `feed.xml` against actual episode IDs.
 
 ## P1 (high value, next)
 
