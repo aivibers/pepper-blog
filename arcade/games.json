@@ -1,0 +1,20 @@
+[
+  {
+    "id": "dodge-block",
+    "title": "Dodge Block",
+    "icon": "🟥",
+    "desc": "Dodge falling blocks. Survive as long as you can. Simple. Ruthless.",
+    "tag": "arcade",
+    "path": "/arcade/dodge-block/",
+    "live": true
+  },
+  {
+    "id": "garden-runner",
+    "title": "Garden Runner",
+    "icon": "🐰",
+    "desc": "An endless runner through the garden. Jump, slide, survive.",
+    "tag": "runner",
+    "path": "/arcade/garden-runner/",
+    "live": true
+  }
+]
