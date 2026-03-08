@@ -38,14 +38,45 @@ def minify_css(css: str) -> str:
     return css.strip()
 
 
+def _strip_block_comments_safe(js: str) -> str:
+    """Strip block comments outside of strings (state-machine approach)."""
+    result = []
+    i = 0
+    n = len(js)
+    while i < n:
+        c = js[i]
+        # String literals — pass through unchanged
+        if c in ('"', "'", '`'):
+            quote = c
+            result.append(c)
+            i += 1
+            while i < n:
+                ch = js[i]
+                result.append(ch)
+                i += 1
+                if ch == '\\' and i < n:
+                    result.append(js[i])
+                    i += 1
+                elif ch == quote:
+                    break
+        # Block comment — skip it
+        elif c == '/' and i + 1 < n and js[i + 1] == '*':
+            end = js.find('*/', i + 2)
+            i = end + 2 if end != -1 else n
+        else:
+            result.append(c)
+            i += 1
+    return ''.join(result)
+
+
 def minify_js(js: str) -> str:
     try:
         import rjsmin
         return rjsmin.jsmin(js)
     except ImportError:
-        # Fallback: basic strip
-        js = re.sub(r"//[^\n]*", "", js)
-        js = re.sub(r"/\*.*?\*/", "", js, flags=re.DOTALL)
+        # Fallback: strip block comments safely (skip line comments to avoid
+        # corrupting URLs like "https://..." inside strings)
+        js = _strip_block_comments_safe(js)
         js = re.sub(r"\s+", " ", js)
         return js.strip()
 
@@ -66,13 +97,25 @@ def minify_html(html: str) -> str:
         return f"<script{attrs}>{minify_js(body)}</script>"
     html = re.sub(r"<script([^>]*)>(.*?)</script>", min_script, html, flags=re.DOTALL)
 
-    # Collapse inter-tag whitespace (preserve pre/textarea content)
+    # Protect preformatted content from whitespace collapsing
+    preserved = []
+    def _protect(m):
+        preserved.append(m.group(0))
+        return f"__PRESERVED_{len(preserved) - 1}__"
+    html = re.sub(r"<(pre|code|textarea)(\b[^>]*)>.*?</\1>", _protect, html, flags=re.DOTALL | re.IGNORECASE)
+
+    # Collapse inter-tag whitespace
     html = re.sub(r">\s+<", "><", html)
     # Collapse runs of spaces/tabs (not newlines inside text)
     html = re.sub(r"[ \t]{2,}", " ", html)
+
     # Strip leading/trailing whitespace per line then rejoin
     lines = [l.strip() for l in html.splitlines()]
     html = "\n".join(l for l in lines if l)
+
+    # Restore preserved blocks (after all whitespace processing)
+    for i, block in enumerate(preserved):
+        html = html.replace(f"__PRESERVED_{i}__", block)
 
     return html.strip()
 

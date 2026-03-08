@@ -59,6 +59,33 @@ class TestMinifyJS(unittest.TestCase):
         self.assertIn("return true", result)
 
 
+class TestMinifyJSEdgeCases(unittest.TestCase):
+    def test_url_in_string_preserved(self):
+        result = minify_js('var u = "https://cdn.example.com/lib.js";')
+        self.assertIn("https://cdn.example.com", result)
+
+    def test_double_slash_in_string_preserved(self):
+        result = minify_js('var s = "http://x.com";')
+        self.assertIn("http://x.com", result)
+
+    def test_fallback_preserves_url_in_string(self):
+        """Force fallback path and verify URLs in strings are preserved."""
+        import unittest.mock
+        with unittest.mock.patch.dict('sys.modules', {'rjsmin': None}):
+            # Re-import to hit fallback
+            from minify import _strip_block_comments_safe
+            js = 'var u = "https://cdn.example.com/lib.js"; /* comment */'
+            from minify import minify_js as _mjs
+            # Call with rjsmin mocked out
+            import importlib, minify as m
+            importlib.reload(m)
+            result = m.minify_js(js)
+            self.assertIn("https://cdn.example.com", result)
+            self.assertNotIn("comment", result)
+            # Reload again to restore
+            importlib.reload(m)
+
+
 class TestMinifyHTML(unittest.TestCase):
     def test_strips_html_comments(self):
         result = minify_html("<!-- comment --><p>hi</p>")
@@ -97,6 +124,40 @@ class TestMinifyHTML(unittest.TestCase):
         html = '<script type="application/json">{"key": "value"}</script>'
         result = minify_html(html)
         self.assertIn('type="application/json"', result)
+
+    def test_multiple_style_blocks(self):
+        html = '<style>body { color: red; }</style><style>p { margin: 0; }</style>'
+        result = minify_html(html)
+        self.assertIn("color:red", result)
+        self.assertIn("margin:0", result)
+
+    def test_multiple_script_blocks(self):
+        html = '<script>var a = 1;</script><script>var b = 2;</script>'
+        result = minify_html(html)
+        self.assertIn("var a", result)
+        self.assertIn("var b", result)
+
+    def test_external_script_not_mangled(self):
+        html = '<script src="app.js"></script>'
+        result = minify_html(html)
+        self.assertIn('<script src="app.js"></script>', result)
+
+    def test_css_keyframes_preserved(self):
+        css_with_keyframes = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }'
+        html = f'<style>{css_with_keyframes}</style>'
+        result = minify_html(html)
+        self.assertIn("@keyframes spin", result)
+        self.assertIn("rotate(360deg)", result)
+
+    def test_pre_content_preserved(self):
+        html = '<div> <pre>  hello\n  world  </pre> <p>text</p> </div>'
+        result = minify_html(html)
+        self.assertIn('<pre>  hello\n  world  </pre>', result)
+
+    def test_textarea_content_preserved(self):
+        html = '<textarea>  some\n  text  </textarea>'
+        result = minify_html(html)
+        self.assertIn('<textarea>  some\n  text  </textarea>', result)
 
 
 class TestBuildIntegration(unittest.TestCase):
