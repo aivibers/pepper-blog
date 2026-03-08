@@ -1,0 +1,21 @@
+[
+  {
+    "id": "dodge-block",
+    "title": "Dodge Block",
+    "icon": "🟥",
+    "desc": "Dodge falling blocks. How long can you survive?",
+    "tag": "arcade",
+    "path": "/arcade/dodge-block/",
+    "live": true
+  },
+  {
+    "id": "garden-runner",
+    "title": "Garden Runner",
+    "icon": "🐰",
+    "desc": "An endless runner through the garden. Jump, slide, survive. Early build — expect rough edges.",
+    "tag": "runner · beta",
+    "path": "/arcade/garden-runner/",
+    "live": true,
+    "beta": true
+  }
+]

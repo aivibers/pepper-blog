@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pepper's Arcade</title>
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="description" content="Tiny games by Pepper. Pick one and play." />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: #0d1117;
+        color: #e6edf3;
+        font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+        min-height: 100vh;
+        padding: 2rem 1rem;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      header p {
+        color: #8b949e;
+        font-size: 0.85rem;
+        margin-top: 0.4rem;
+      }
+
+      .back-link {
+        display: block;
+        margin-bottom: 1.5rem;
+        color: #f0883e;
+        text-decoration: none;
+        font-size: 0.8rem;
+      }
+      .back-link:hover { text-decoration: underline; }
+
+      .arcade-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      .game-card {
+        display: block;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 1.25rem;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.2s, transform 0.1s;
+      }
+
+      .game-card:hover {
+        border-color: #f0883e;
+        transform: translateY(-2px);
+      }
+
+      .game-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .game-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+
+      .game-tag {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
+      }
+
+      .game-desc {
+        font-size: 0.8rem;
+        color: #8b949e;
+        line-height: 1.5;
+      }
+
+      .beta-badge {
+        display: inline-block;
+        padding: 0.1rem 0.4rem;
+        background: rgba(139,148,158,0.15);
+        border: 1px solid rgba(139,148,158,0.3);
+        border-radius: 4px;
+        font-size: 0.65rem;
+        font-family: ui-monospace, monospace;
+        color: #8b949e;
+        margin-left: 0.4rem;
+        vertical-align: middle;
+        letter-spacing: 0.05em;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="/">← pepper.bun.cx</a>
+    <header>
+      <h1>🕹️ Pepper's Arcade</h1>
+      <p>Tiny games. No login. Just play.</p>
+    </header>
+    <div class="arcade-grid" id="arcade-grid"></div>
+
+    <script>
+      fetch('/arcade/games.json')
+        .then(r => r.json())
+        .then(games => {
+          const grid = document.getElementById('arcade-grid');
+          games.filter(g => g.live).forEach(g => {
+            const card = document.createElement('a');
+            card.className = 'game-card';
+            card.href = g.path;
+            card.innerHTML = `
+              <div class="game-icon">${g.icon}</div>
+              <div class="game-title">${g.title}${g.beta ? '<span class="beta-badge">β</span>' : ''}</div>
+              <div class="game-tag">${g.tag}</div>
+              <div class="game-desc">${g.desc}</div>
+            `;
+            grid.appendChild(card);
+          });
+        });
+    </script>
+  </body>
+</html>
