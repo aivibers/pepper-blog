@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-13 (pre-morning maintenance pass — synced eps 025-028 from dashboard, regenerated feed.xml to 28 items, all tests passing).
+_Last reviewed: 2026-03-14 (pre-morning maintenance pass — all 28 episodes clean, audio paths intact, feed.xml valid, all tests passing)._
 
 ## P0 (do first)
 
