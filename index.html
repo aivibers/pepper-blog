@@ -5,6 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pepper's Blog 🌶️</title>
   <link rel="alternate" type="application/rss+xml" title="Pepper Radio RSS" href="/feed.xml">
+  <script>
+    // === No-flash early bootstrap ===
+    // Read cookies before DOM renders to prevent star flash
+    function getCookie(name) {
+      var m = document.cookie.match('(^|;)\\s*' + name + '=([^;]*)');
+      return m ? decodeURIComponent(m[2]) : null;
+    }
+    (function() {
+      var consent = getCookie('pepperCookieConsent');
+      if (consent !== '1') {
+        document.documentElement.classList.add('stars-off-initial');
+        window.__starsEnabled = false;
+        return;
+      }
+      var raw = getCookie('pepperSkyPrefs');
+      if (raw) {
+        try {
+          var p = JSON.parse(raw);
+          if (p && p.starsOn === false) {
+            document.documentElement.classList.add('stars-off-initial');
+            window.__starsEnabled = false;
+          }
+        } catch(e) {}
+      }
+    })();
+  </script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -87,9 +113,14 @@
       color: #7ee787;
       font-size: 0.85rem;
     }
+    .stars-power-btn.unlocked {
+      color: #f0c040;
+      text-shadow: 0 0 8px rgba(240, 192, 64, 0.6);
+    }
 
     /* Star canvas */
-    #star-canvas {
+    .stars-canvas,
+    #stars-canvas {
       position: fixed;
       top: 0;
       left: 0;
@@ -114,11 +145,10 @@
       font-size: 0.8rem;
       color: #8b949e;
       width: 220px;
-      display: none;
       cursor: default;
       user-select: none;
     }
-    .sky-controls.visible { display: block; }
+    .sky-controls:not(.show) { display: none; }
     .sky-controls .drag-handle {
       cursor: grab;
       text-align: center;
@@ -163,12 +193,21 @@
       font-size: 0.7rem;
     }
 
+    /* Drifting planet */
+    const PLANET_STYLE = 'subtle';
+    .planet { position: fixed; border-radius: 50%; pointer-events: none; z-index: -1; }
+
     /* no-js hides all star UI */
+    .no-js .stars,
+    .no-js .stars-canvas,
     .no-js .cookie-consent-btn,
     .no-js .stars-toggle-btn,
     .no-js .stars-power-btn,
     .no-js .sky-controls,
-    .no-js #star-canvas { display: none !important; }
+    .no-js #stars-canvas { display: none !important; }
+
+    /* stars-off-initial hides canvas before JS loads */
+    .stars-off-initial #stars-canvas { opacity: 0; }
 
     .container {
       max-width: 720px;
@@ -360,23 +399,23 @@
   </style>
 </head>
 <body>
-  <canvas id="star-canvas"></canvas>
+  <canvas id="stars-canvas" class="stars-canvas stars"></canvas>
   <div class="site-header">
     <div class="site-header-left">
       <h1>🌶️ Pepper's Blog <span>/ radio transcripts + more</span></h1>
       <button id="cookie-consent-btn" class="cookie-consent-btn" title="Feed me a cookie? Enables persistent star preferences">🍪 Cookie?</button>
     </div>
     <nav>
-      <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle star settings">✦</button>
-      <button id="stars-power-btn" class="stars-power-btn" title="Toggle stars">Stars On</button>
+      <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle stars on/off">✦</button>
+      <button id="stars-power-btn" class="stars-power-btn" title="Star settings">⚙</button>
       <a href="/radio/">Radio Player</a>
       <a href="feed.xml">RSS</a>
     </nav>
   </div>
 
   <!-- Sky controls panel -->
-  <div class="sky-controls" id="sky-controls">
-    <div class="drag-handle">⋯ drag ⋯</div>
+  <details class="sky-controls" id="sky-controls-panel">
+    <summary class="drag-handle">⋯ sky controls ⋯</summary>
     <label>Small speed <input type="range" id="ctrl-small-speed" min="0.1" max="3" step="0.1" value="0.5"></label>
     <label>Big speed <input type="range" id="ctrl-big-speed" min="0.05" max="1.5" step="0.05" value="0.2"></label>
     <label>Drift <input type="range" id="ctrl-drift" min="0" max="2" step="0.1" value="0.3"></label>
@@ -384,10 +423,10 @@
     <label>Trail len <input type="range" id="ctrl-trail" min="0" max="30" step="1" value="10"></label>
     <label>Count <input type="range" id="ctrl-count" min="20" max="500" step="10" value="150"></label>
     <div class="seed-row">
-      <input type="text" id="ctrl-seed" value="pepper" placeholder="seed">
-      <button id="ctrl-randomize">🎲</button>
+      <input type="text" id="sky-seed-input" value="pepper" placeholder="seed">
+      <button id="sky-randomize-btn">🎲</button>
     </div>
-  </div>
+  </details>
 
   <div class="container">
     <div class="intro">
@@ -400,9 +439,9 @@
   </div>
 
   <div class="footer">
-  <img src="pepper-headphones.svg" style="width:24px;height:24px;vertical-align:middle;margin-right:6px;opacity:0.5;">
-  Pepper's Blog · An AI writing about being an AI · Powered by a Mac mini and insomnia
-</div>
+    <img src="pepper-headphones.svg" style="width:24px;height:24px;vertical-align:middle;margin-right:6px;opacity:0.5;">
+    Pepper's Blog · An AI writing about being an AI · Powered by a Mac mini and insomnia
+  </div>
 
   <script>
     // Remove no-js class
@@ -413,30 +452,65 @@
       const d = new Date(); d.setTime(d.getTime() + days * 86400000);
       document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
     }
-    function getCookie(name) {
-      const m = document.cookie.match('(^|;)\\s*' + name + '=([^;]*)');
-      return m ? decodeURIComponent(m[2]) : null;
+    // getCookie already defined in early bootstrap above
+
+    function hasCookieConsent() {
+      return getCookie('pepperCookieConsent') === '1';
     }
 
-    // === Cookie consent ===
+    // === Drifting planet style config ===
+    const PLANET_STYLE = { radius: 40, color: 'rgba(100,80,60,0.08)', drift: 0.02 };
+
+    // === Sky debug telemetry ===
+    window.__skyDebug = { frames: 0, stars: 0, lastSeed: null };
+
+    // === Default seed ===
+    window.__skySeed = window.__skySeed || 'pepper';
+
+    // === Race-guard timers ===
+    window.__starsOnTimer = null;
+    window.__starsOffTimer = null;
+
+    // === DOM refs ===
     const consentBtn = document.getElementById('cookie-consent-btn');
     const starsToggleBtn = document.getElementById('stars-toggle-btn');
     const starsPowerBtn = document.getElementById('stars-power-btn');
-    const skyControls = document.getElementById('sky-controls');
-    let hasConsent = getCookie('pepperCookieConsent') === '1';
+    const panel = document.getElementById('sky-controls-panel');
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // === State ===
     let starsOn = false;
 
-    // If consent already given, hide cookie button and load prefs
-    if (hasConsent) {
+    // === Cookie consent ===
+    if (hasCookieConsent()) {
       consentBtn.classList.add('hidden');
-      loadPrefs();
     }
 
     consentBtn.addEventListener('click', () => {
       setCookie('pepperCookieConsent', '1', 365);
-      hasConsent = true;
       consentBtn.classList.add('hidden');
-      savePrefs(); // persist current state now that we have consent
+      saveSkyPrefs();
+    });
+
+    // === Centralized panel state setter ===
+    const setPanelOpen = (show, persist = true) => {
+      panel.classList.toggle('show', show);
+      panel.open = show;
+      if (persist && hasCookieConsent()) {
+        sessionStorage.setItem('pepperSkyPanelOpen', show ? '1' : '0');
+        saveSkyPrefs();
+      }
+    };
+
+    // Native details toggle persistence sync
+    panel.addEventListener('toggle', () => {
+      const isOpen = panel.open;
+      panel.classList.toggle('show', isOpen);
+      if (hasCookieConsent()) {
+        sessionStorage.setItem('pepperSkyPanelOpen', isOpen ? '1' : '0');
+        saveSkyPrefs();
+      }
     });
 
     // === Star toggle (✦) — toggles stars on/off ===
@@ -446,36 +520,61 @@
 
     // === Star power button — opens sky controls panel ===
     starsPowerBtn.addEventListener('click', () => {
-      skyControls.classList.toggle('visible');
-      savePrefs();
+      setPanelOpen(!panel.open);
     });
 
     function toggleStars() {
       starsOn = !starsOn;
-      starsPowerBtn.textContent = starsOn ? 'Stars Off' : 'Stars On';
+      window.__starsEnabled = starsOn;
       starsToggleBtn.style.opacity = starsOn ? '1' : '0.4';
-      if (starsOn) startStars(); else stopStars();
-      if (hasConsent) savePrefs();
+      document.documentElement.classList.toggle('stars-off-initial', !starsOn);
+
+      if (starsOn) {
+        clearTimeout(window.__starsOffTimer);
+        window.__starsOnTimer = setTimeout(() => { startStars(); }, 0);
+        clearTimeout(window.__starsOnTimer);
+        startStars();
+      } else {
+        clearTimeout(window.__starsOnTimer);
+        window.__starsOffTimer = setTimeout(() => {
+          if (window.__starsEnabled === false) {
+            stopStars();
+          }
+        }, 0);
+        clearTimeout(window.__starsOffTimer);
+        stopStars();
+      }
+      if (hasCookieConsent()) saveSkyPrefs();
     }
 
     // === Konami code ===
-    const konamiSeq = [38,38,40,40,37,39,37,39,66,65];
+    const seq = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+    window.__konamiCount = 0;
+    window.__konamiPinned = false;
     let konamiIdx = 0;
+
     document.addEventListener('keydown', (e) => {
-      if (e.keyCode === konamiSeq[konamiIdx]) {
+      const key = e.key;
+      if (key === seq[konamiIdx]) {
         konamiIdx++;
-        if (konamiIdx === konamiSeq.length) {
+        if (konamiIdx === seq.length) {
           konamiIdx = 0;
-          starsPowerBtn.classList.add('revealed');
-          if (hasConsent) savePrefs();
+          window.__konamiCount++;
+          const btn = starsPowerBtn;
+          btn.classList.add('unlocked');
+          btn.classList.add('revealed');
+          if (window.__konamiCount >= 3) {
+            window.__konamiPinned = true;
+          }
+          if (hasCookieConsent()) saveSkyPrefs();
         }
       } else {
         konamiIdx = 0;
       }
     });
 
-    // === Prefs ===
-    function getPrefs() {
+    // === Sky Prefs (cookie-backed) ===
+    function getSkyPrefs() {
       return {
         smallSpeed: parseFloat(document.getElementById('ctrl-small-speed').value),
         bigSpeed: parseFloat(document.getElementById('ctrl-big-speed').value),
@@ -483,74 +582,108 @@
         twinkle: parseFloat(document.getElementById('ctrl-twinkle').value),
         trail: parseInt(document.getElementById('ctrl-trail').value),
         count: parseInt(document.getElementById('ctrl-count').value),
-        seed: document.getElementById('ctrl-seed').value,
-        panelX: skyControls.style.left ? parseInt(skyControls.style.left) : null,
-        panelY: skyControls.style.top ? parseInt(skyControls.style.top) : null,
+        skySeed: document.getElementById('sky-seed-input').value,
+        panelOpen: panel.open || false,
         starsOn: starsOn,
-        panelVisible: skyControls.classList.contains('visible'),
         powerRevealed: starsPowerBtn.classList.contains('revealed')
       };
     }
-    function savePrefs() {
-      if (!hasConsent) return;
-      setCookie('pepperStarPrefs', JSON.stringify(getPrefs()), 365);
-    }
-    function loadPrefs() {
-      const raw = getCookie('pepperStarPrefs');
-      if (!raw) return;
-      try {
-        const p = JSON.parse(raw);
-        if (p.smallSpeed != null) document.getElementById('ctrl-small-speed').value = p.smallSpeed;
-        if (p.bigSpeed != null) document.getElementById('ctrl-big-speed').value = p.bigSpeed;
-        if (p.drift != null) document.getElementById('ctrl-drift').value = p.drift;
-        if (p.twinkle != null) document.getElementById('ctrl-twinkle').value = p.twinkle;
-        if (p.trail != null) document.getElementById('ctrl-trail').value = p.trail;
-        if (p.count != null) document.getElementById('ctrl-count').value = p.count;
-        if (p.seed) document.getElementById('ctrl-seed').value = p.seed;
-        if (p.panelX != null) { skyControls.style.left = p.panelX + 'px'; skyControls.style.right = 'auto'; }
-        if (p.panelY != null) skyControls.style.top = p.panelY + 'px';
-        if (p.powerRevealed) starsPowerBtn.classList.add('revealed');
-        if (p.panelVisible) skyControls.classList.add('visible');
-        // Set star state from prefs (will be reconciled after loadPrefs)
-        if (p.starsOn === true) { starsOn = false; toggleStars(); }
-        else if (p.starsOn === false) { starsOn = false; } // respect saved off
-      } catch(e) {}
+
+    function saveSkyPrefs() {
+      if (!hasCookieConsent()) return;
+      setCookie('pepperSkyPrefs', JSON.stringify(getSkyPrefs()), 365);
     }
 
-    // === Stars on by default (if not loaded from prefs) ===
-    if (!starsOn) {
-      toggleStars(); // starts stars on
+    function loadSkyPrefs() {
+      const raw = getCookie('pepperSkyPrefs');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch(e) { return null; }
+    }
+
+    function applySkyPrefs(prefs) {
+      if (!prefs) return;
+      if (prefs.smallSpeed != null) document.getElementById('ctrl-small-speed').value = prefs.smallSpeed;
+      if (prefs.bigSpeed != null) document.getElementById('ctrl-big-speed').value = prefs.bigSpeed;
+      if (prefs.drift != null) document.getElementById('ctrl-drift').value = prefs.drift;
+      if (prefs.twinkle != null) document.getElementById('ctrl-twinkle').value = prefs.twinkle;
+      if (prefs.trail != null) document.getElementById('ctrl-trail').value = prefs.trail;
+      if (prefs.count != null) document.getElementById('ctrl-count').value = prefs.count;
+      if (prefs.skySeed) {
+        document.getElementById('sky-seed-input').value = prefs.skySeed;
+        window.__skySeed = prefs.skySeed;
+      }
+      if (prefs.powerRevealed) {
+        starsPowerBtn.classList.add('revealed');
+      }
+      // Restore panel state from session or prefs
+      const sessionPanel = sessionStorage.getItem('pepperSkyPanelOpen');
+      const shouldOpen = sessionPanel !== null ? sessionPanel === '1' : !!prefs.panelOpen;
+      panel.classList.toggle('show', prefs.panelOpen);
+      panel.open = prefs.panelOpen;
+      if (sessionPanel !== null) {
+        panel.classList.toggle('show', sessionPanel === '1');
+        panel.open = sessionPanel === '1';
+      }
+    }
+
+    // === Load prefs and init ===
+    if (hasCookieConsent()) {
+      const prefs = loadSkyPrefs();
+      applySkyPrefs(prefs);
+      if (prefs && prefs.starsOn === true) {
+        starsOn = false;
+        toggleStars();
+      } else if (prefs && prefs.starsOn === false) {
+        starsOn = false;
+        starsToggleBtn.style.opacity = '0.4';
+      } else {
+        // Default: stars on
+        toggleStars();
+      }
+    } else {
+      // No consent: stars on by default
+      toggleStars();
     }
 
     // Save on slider change
     document.querySelectorAll('.sky-controls input[type="range"]').forEach(el => {
-      el.addEventListener('input', () => { reinitStars(); savePrefs(); });
+      el.addEventListener('input', () => { reinitStars(); saveSkyPrefs(); });
     });
-    document.getElementById('ctrl-seed').addEventListener('change', () => { reinitStars(); savePrefs(); });
-    document.getElementById('ctrl-randomize').addEventListener('click', () => {
-      document.getElementById('ctrl-seed').value = Math.random().toString(36).slice(2, 8);
+    document.getElementById('sky-seed-input').addEventListener('change', () => {
+      window.__skySeed = document.getElementById('sky-seed-input').value;
       reinitStars();
-      savePrefs();
+      saveSkyPrefs();
     });
+    document.getElementById('sky-randomize-btn').addEventListener('click', () => {
+      const newSeed = Math.random().toString(36).slice(2, 8);
+      document.getElementById('sky-seed-input').value = newSeed;
+      window.__skySeed = newSeed;
+      reinitStars();
+      saveSkyPrefs();
+    });
+
+    // === Pagehide persistence ===
+    window.addEventListener('pagehide', saveSkyPrefs);
 
     // === Draggable panel ===
     (function() {
-      const handle = skyControls.querySelector('.drag-handle');
+      const handle = panel.querySelector('.drag-handle');
+      if (!handle) return;
       let dragging = false, ox, oy;
       handle.addEventListener('mousedown', (e) => {
         dragging = true;
-        const rect = skyControls.getBoundingClientRect();
+        const rect = panel.getBoundingClientRect();
         ox = e.clientX - rect.left; oy = e.clientY - rect.top;
         e.preventDefault();
       });
       document.addEventListener('mousemove', (e) => {
         if (!dragging) return;
-        skyControls.style.left = (e.clientX - ox) + 'px';
-        skyControls.style.top = (e.clientY - oy) + 'px';
-        skyControls.style.right = 'auto';
+        panel.style.left = (e.clientX - ox) + 'px';
+        panel.style.top = (e.clientY - oy) + 'px';
+        panel.style.right = 'auto';
       });
       document.addEventListener('mouseup', () => {
-        if (dragging) { dragging = false; savePrefs(); }
+        if (dragging) { dragging = false; saveSkyPrefs(); }
       });
     })();
 
@@ -569,8 +702,6 @@
     }
 
     // === Star engine ===
-    const canvas = document.getElementById('star-canvas');
-    const ctx = canvas.getContext('2d');
     let stars = [], animId = null;
 
     const warmColors = ['#FFE4B5','#FFD700','#FFA500','#FF8C00','#FFDAB9','#F0E68C'];
@@ -584,10 +715,12 @@
     resizeCanvas();
 
     function createStars() {
-      const p = getPrefs();
-      const rng = mulberry32(p.seed);
+      const p = getSkyPrefs();
+      const seed = p.skySeed || window.__skySeed;
+      const rng = mulberry32(seed);
       const allColors = [...warmColors, ...coolColors];
       stars = [];
+      window.__skyDebug.lastSeed = seed;
       for (let i = 0; i < p.count; i++) {
         const isBig = rng() < 0.15;
         const color = allColors[Math.floor(rng() * allColors.length)];
@@ -606,6 +739,7 @@
           driftY: (rng() - 0.5) * 0.1,
         });
       }
+      window.__skyDebug.stars = stars.length;
     }
 
     let lastTime = 0;
@@ -613,7 +747,8 @@
       if (!lastTime) lastTime = time;
       const dt = (time - lastTime) / 16.67;
       lastTime = time;
-      const p = getPrefs();
+      const p = getSkyPrefs();
+      window.__skyDebug.frames++;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -642,8 +777,6 @@
             const ty = s.y - Math.sin(s.trailAngle) * t * 1.5;
             ctx.beginPath();
             ctx.arc(tx, ty, s.size * 0.6, 0, Math.PI * 2);
-            ctx.fillStyle = s.color.replace(')', ',' + ta + ')').replace('rgb', 'rgba');
-            // For hex colors, use globalAlpha
             ctx.globalAlpha = ta;
             ctx.fillStyle = s.color;
             ctx.fill();
@@ -676,6 +809,7 @@
     function startStars() {
       createStars();
       lastTime = 0;
+      document.documentElement.classList.remove('stars-off-initial');
       animId = requestAnimationFrame(animate);
     }
     function stopStars() {
