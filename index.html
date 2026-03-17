@@ -74,14 +74,12 @@
     }
     .cookie-consent-btn.hidden { display: none; }
 
-    /* Star toggle button */
+    /* Star toggle button - always visible */
     .stars-toggle-btn {
       color: #f0c040;
       font-size: 1.1rem;
       text-shadow: 0 0 6px rgba(240, 192, 64, 0.5);
-      display: none;
     }
-    .stars-toggle-btn.revealed { display: inline-block; }
 
     /* Star power button - hidden until Konami */
     .stars-power-btn:not(.revealed) { display: none; }
@@ -426,38 +424,38 @@
     const starsPowerBtn = document.getElementById('stars-power-btn');
     const skyControls = document.getElementById('sky-controls');
     let hasConsent = getCookie('pepperCookieConsent') === '1';
+    let starsOn = false;
 
-    function applyConsent() {
-      if (hasConsent) {
-        consentBtn.classList.add('hidden');
-        starsToggleBtn.classList.add('revealed');
-        loadPrefs();
-      }
+    // If consent already given, hide cookie button and load prefs
+    if (hasConsent) {
+      consentBtn.classList.add('hidden');
+      loadPrefs();
     }
-    applyConsent();
 
     consentBtn.addEventListener('click', () => {
       setCookie('pepperCookieConsent', '1', 365);
       hasConsent = true;
-      applyConsent();
-      if (!starsOn) toggleStars();
+      consentBtn.classList.add('hidden');
+      savePrefs(); // persist current state now that we have consent
     });
 
-    // === Star toggle ===
+    // === Star toggle (✦) — toggles stars on/off ===
     starsToggleBtn.addEventListener('click', () => {
+      toggleStars();
+    });
+
+    // === Star power button — opens sky controls panel ===
+    starsPowerBtn.addEventListener('click', () => {
       skyControls.classList.toggle('visible');
       savePrefs();
     });
 
-    // === Star power ===
-    let starsOn = false;
-    starsPowerBtn.addEventListener('click', () => toggleStars());
-
     function toggleStars() {
       starsOn = !starsOn;
       starsPowerBtn.textContent = starsOn ? 'Stars Off' : 'Stars On';
+      starsToggleBtn.style.opacity = starsOn ? '1' : '0.4';
       if (starsOn) startStars(); else stopStars();
-      savePrefs();
+      if (hasConsent) savePrefs();
     }
 
     // === Konami code ===
@@ -469,8 +467,7 @@
         if (konamiIdx === konamiSeq.length) {
           konamiIdx = 0;
           starsPowerBtn.classList.add('revealed');
-          skyControls.classList.add('visible');
-          if (!starsOn) toggleStars();
+          if (hasConsent) savePrefs();
         }
       } else {
         konamiIdx = 0;
@@ -514,8 +511,15 @@
         if (p.panelY != null) skyControls.style.top = p.panelY + 'px';
         if (p.powerRevealed) starsPowerBtn.classList.add('revealed');
         if (p.panelVisible) skyControls.classList.add('visible');
-        if (p.starsOn) { starsOn = false; toggleStars(); }
+        // Set star state from prefs (will be reconciled after loadPrefs)
+        if (p.starsOn === true) { starsOn = false; toggleStars(); }
+        else if (p.starsOn === false) { starsOn = false; } // respect saved off
       } catch(e) {}
+    }
+
+    // === Stars on by default (if not loaded from prefs) ===
+    if (!starsOn) {
+      toggleStars(); // starts stars on
     }
 
     // Save on slider change
