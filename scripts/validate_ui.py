@@ -69,13 +69,16 @@ must_contain("panelOpen:", "missing panel open-state persistence field")
 must_contain("skySeed:", "missing seed persistence field")
 must_contain("window.__skySeed = window.__skySeed || 'pepper'", "missing default pepper seed")
 must_contain("id=\"sky-seed-input\"", "missing sky seed input control")
-must_contain("panel.classList.toggle('show', prefs.panelOpen)", "missing panel open-state restore")
-must_contain("panel.open = prefs.panelOpen", "missing <details> open-state restore")
+must_contain("const shouldOpen = sessionPanel !== null ? sessionPanel === '1' : !!prefs.panelOpen;", "missing resolved panel open-state restore logic")
+must_contain("setPanelOpen(shouldOpen, false);", "missing centralized panel restore path")
 must_contain("const setPanelOpen = (show, persist = true)", "missing centralized panel state setter")
 must_contain("panel.addEventListener('toggle'", "missing native details toggle persistence sync")
 must_contain("window.addEventListener('pagehide', saveSkyPrefs)", "missing pagehide persistence save hook")
-must_contain("sessionStorage.setItem('pepperSkyPanelOpen'", "missing sessionStorage panel-open persistence")
-must_contain("sessionStorage.getItem('pepperSkyPanelOpen'", "missing sessionStorage panel-open restore")
+must_contain("document.addEventListener('visibilitychange'", "missing visibility pause/resume hook")
+must_contain("function getSessionValue(key)", "missing safe sessionStorage getter")
+must_contain("function setSessionValue(key, value)", "missing safe sessionStorage setter")
+must_contain("setSessionValue('pepperSkyPanelOpen'", "missing sessionStorage panel-open persistence")
+must_contain("const sessionPanel = getSessionValue('pepperSkyPanelOpen');", "missing sessionStorage panel-open restore")
 must_contain("const PLANET_STYLE =", "missing drifting planet style config")
 must_contain("window.__skyDebug", "missing sky debug telemetry for sanity checks")
 
@@ -98,6 +101,9 @@ must_contain("getCookie('pepperCookieConsent')", "missing early cookie consent r
 must_contain("consent !== '1'", "missing no-consent initial stars-off gate")
 must_contain("getCookie('pepperSkyPrefs')", "missing early prefs cookie read for initial stars state")
 must_contain("window.__starsEnabled = false", "missing early starsEnabled preload for no-flash path")
+must_contain("function applyStarsDomState()", "missing centralized stars DOM state sync")
+must_contain("classList.toggle('stars-on', starsOn)", "missing stars-on root class toggle")
+must_contain("classList.toggle('stars-off', !starsOn)", "missing stars-off root class toggle")
 
 # 8) No duplicate element IDs — each control ID must appear exactly once as id="..."
 import collections
@@ -128,7 +134,19 @@ must_contain('aria-label="Enable cookie consent', "cookie consent button missing
 if 'container.innerHTML +=' in html:
     errors.append("innerHTML += in loop causes O(n²) re-parsing — use single assignment")
 
-# 12) Footer image should have alt attribute
+# 12) Episode rendering should avoid HTML string interpolation for transcript/title/tag data
+must_contain("function compareEpisodes(a, b)", "missing stable episode sort")
+must_contain("function renderTranscript(transcript)", "missing transcript renderer")
+must_contain("function renderEpisode(ep)", "missing episode renderer")
+must_contain("document.createDocumentFragment()", "missing fragment-based episode render")
+must_contain("container.replaceChildren(fragment)", "missing single-pass episode DOM replacement")
+must_contain("title.textContent = ep.title || ''", "episode title should render via textContent")
+must_contain("p.textContent = paragraph;", "transcript paragraphs should render via textContent")
+must_contain("error.textContent = 'Episodes failed to load.';", "missing fetch failure fallback")
+must_contain("const el = document.getElementById(id);", "hash routing should avoid querySelector hash parsing")
+must_contain("if (!r.ok) throw new Error('episodes request failed');", "missing HTTP failure handling for episodes fetch")
+
+# 13) Footer image should have alt attribute
 if re.search(r'<img[^>]+pepper-headphones[^>]+(?<!alt="")>', html):
     if not re.search(r'<img[^>]+pepper-headphones[^>]+alt=', html):
         errors.append("footer image missing alt attribute")

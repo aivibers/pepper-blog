@@ -490,6 +490,20 @@
       return getCookie('pepperCookieConsent') === '1';
     }
 
+    function getSessionValue(key) {
+      try {
+        return window.sessionStorage.getItem(key);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setSessionValue(key, value) {
+      try {
+        window.sessionStorage.setItem(key, value);
+      } catch (e) {}
+    }
+
     // === Drifting planet style config ===
     const PLANET_STYLE = { radius: 40, color: 'rgba(100,80,60,0.08)', drift: 0.02 };
     const COMET_STYLE = { chance: 0.0015, minSpeed: 8, maxSpeed: 16, tail: 14 };
@@ -541,7 +555,7 @@
       panel.classList.toggle('show', show);
       panel.open = show;
       if (persist && hasCookieConsent()) {
-        sessionStorage.setItem('pepperSkyPanelOpen', show ? '1' : '0');
+        setSessionValue('pepperSkyPanelOpen', show ? '1' : '0');
         saveSkyPrefs();
       }
     };
@@ -551,7 +565,7 @@
       const isOpen = panel.open;
       panel.classList.toggle('show', isOpen);
       if (hasCookieConsent()) {
-        sessionStorage.setItem('pepperSkyPanelOpen', isOpen ? '1' : '0');
+        setSessionValue('pepperSkyPanelOpen', isOpen ? '1' : '0');
         saveSkyPrefs();
       }
     });
@@ -566,11 +580,17 @@
       setPanelOpen(!panel.open);
     });
 
+    function applyStarsDomState() {
+      document.documentElement.classList.toggle('stars-on', starsOn);
+      document.documentElement.classList.toggle('stars-off', !starsOn);
+      document.documentElement.classList.toggle('stars-off-initial', !starsOn);
+    }
+
     function toggleStars() {
       starsOn = !starsOn;
       window.__starsEnabled = starsOn;
       starsToggleBtn.style.opacity = starsOn ? '1' : '0.4';
-      document.documentElement.classList.toggle('stars-off-initial', !starsOn);
+      applyStarsDomState();
 
       if (starsOn) {
         clearTimeout(window.__starsOffTimer);
@@ -661,14 +681,9 @@
         starsPowerBtn.classList.add('revealed');
       }
       // Restore panel state from session or prefs
-      const sessionPanel = sessionStorage.getItem('pepperSkyPanelOpen');
+      const sessionPanel = getSessionValue('pepperSkyPanelOpen');
       const shouldOpen = sessionPanel !== null ? sessionPanel === '1' : !!prefs.panelOpen;
-      panel.classList.toggle('show', prefs.panelOpen);
-      panel.open = prefs.panelOpen;
-      if (sessionPanel !== null) {
-        panel.classList.toggle('show', sessionPanel === '1');
-        panel.open = sessionPanel === '1';
-      }
+      setPanelOpen(shouldOpen, false);
       syncSkyState();
     }
 
@@ -712,6 +727,13 @@
 
     // === Pagehide persistence ===
     window.addEventListener('pagehide', saveSkyPrefs);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stopStars();
+      } else if (starsOn) {
+        startStars();
+      }
+    });
 
     // === Draggable panel ===
     (function() {
@@ -751,13 +773,18 @@
 
     // === Star engine ===
     let stars = [], animId = null, comet = null, constellation = null;
+    let viewportWidth = 0, viewportHeight = 0, pixelRatio = 1;
 
     const warmColors = ['#FFE4B5','#FFD700','#FFA500','#FF8C00','#FFDAB9','#F0E68C'];
     const coolColors = ['#B0C4DE','#87CEEB','#ADD8E6','#E0E0FF','#C8D8F0','#A8C8E8'];
 
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      viewportWidth = window.innerWidth;
+      viewportHeight = window.innerHeight;
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(viewportWidth * pixelRatio);
+      canvas.height = Math.round(viewportHeight * pixelRatio);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     }
     window.addEventListener('resize', () => { resizeCanvas(); reinitStars(); });
     resizeCanvas();
@@ -775,8 +802,8 @@
         const isBig = rng() < 0.15;
         const color = allColors[Math.floor(rng() * allColors.length)];
         stars.push({
-          x: rng() * canvas.width,
-          y: rng() * canvas.height,
+          x: rng() * viewportWidth,
+          y: rng() * viewportHeight,
           size: isBig ? 1.5 + rng() * 2 : 0.5 + rng() * 1.2,
           isBig: isBig,
           color: color,
@@ -787,7 +814,7 @@
           trailAngle: rng() * Math.PI * 2,
           driftX: (rng() - 0.5) * 0.3,
           driftY: (rng() - 0.5) * 0.1,
-          respawnX: rng() * canvas.width,
+          respawnX: rng() * viewportWidth,
         });
       }
       const pepperSeed = /pepper|capsaicin|chili/i.test(seed);
@@ -813,7 +840,7 @@
     function spawnComet() {
       comet = {
         x: -40,
-        y: canvas.height * (0.15 + Math.random() * 0.35),
+        y: viewportHeight * (0.15 + Math.random() * 0.35),
         speed: COMET_STYLE.minSpeed + Math.random() * (COMET_STYLE.maxSpeed - COMET_STYLE.minSpeed),
         driftX: 1,
         driftY: 0.2 + Math.random() * 0.18,
@@ -830,7 +857,7 @@
       const p = skyState || syncSkyState();
       window.__skyDebug.frames++;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, viewportWidth, viewportHeight);
 
       for (const s of stars) {
         // Movement - parallax: big stars slow, small fast
@@ -839,9 +866,9 @@
         s.x += s.driftX * p.drift * dt;
 
         // Wrap
-        if (s.y > canvas.height + 5) { s.y = -5; s.x = s.respawnX; }
-        if (s.x < -5) s.x = canvas.width + 5;
-        if (s.x > canvas.width + 5) s.x = -5;
+        if (s.y > viewportHeight + 5) { s.y = -5; s.x = s.respawnX; }
+        if (s.x < -5) s.x = viewportWidth + 5;
+        if (s.x > viewportWidth + 5) s.x = -5;
 
         // Twinkle
         s.twinklePhase += s.twinkleSpeed * 0.02 * dt;
@@ -918,7 +945,7 @@
         ctx.fillStyle = comet.color;
         ctx.fill();
         ctx.globalAlpha = 1;
-        if (comet.x > canvas.width + 80 || comet.y > canvas.height + 60) {
+        if (comet.x > viewportWidth + 80 || comet.y > viewportHeight + 60) {
           comet = null;
         }
       }
@@ -927,16 +954,18 @@
     }
 
     function startStars() {
+      if (animId !== null) return;
       createStars();
       lastTime = 0;
-      document.documentElement.classList.remove('stars-off-initial');
+      applyStarsDomState();
       animId = requestAnimationFrame(animate);
     }
     function stopStars() {
       if (animId) cancelAnimationFrame(animId);
       animId = null;
       comet = null;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      lastTime = 0;
+      ctx.clearRect(0, 0, viewportWidth, viewportHeight);
     }
     function reinitStars() {
       if (starsOn) { stopStars(); startStars(); }
@@ -948,7 +977,9 @@
     function handleHash() {
       const hash = window.location.hash;
       if (!hash) return;
-      const el = document.querySelector(hash);
+      const id = hash.slice(1);
+      if (!id) return;
+      const el = document.getElementById(id);
       if (el) {
         el.classList.add('highlighted');
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -965,53 +996,153 @@
       });
     }
 
+    function compareEpisodes(a, b) {
+      const dateA = typeof a.date === 'string' ? a.date : '';
+      const dateB = typeof b.date === 'string' ? b.date : '';
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      return String(b.id || '').localeCompare(String(a.id || ''));
+    }
+
+    function renderTranscript(transcript) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'post-transcript';
+      const text = typeof transcript === 'string' ? transcript.trim() : '';
+      text.split(/\n\s*\n/).filter(Boolean).forEach(paragraph => {
+        const p = document.createElement('p');
+        p.textContent = paragraph;
+        wrapper.appendChild(p);
+      });
+      return wrapper;
+    }
+
+    function renderEpisode(ep) {
+      const article = document.createElement('article');
+      article.className = 'post' + (ep.featured ? ' featured' : '');
+      article.id = 'ep-' + ep.id;
+
+      const header = document.createElement('div');
+      header.className = 'post-header';
+
+      const show = document.createElement('div');
+      show.className = 'post-show';
+      show.textContent = (ep.emoji || '') + ' ' + (ep.show || '');
+      if (ep.featured) {
+        const badge = document.createElement('span');
+        badge.className = 'featured-badge';
+        badge.textContent = 'Featured';
+        show.appendChild(document.createTextNode(' '));
+        show.appendChild(badge);
+      }
+
+      const titleRow = document.createElement('div');
+      titleRow.className = 'post-title-row';
+
+      const title = document.createElement('h3');
+      title.className = 'post-title';
+      title.textContent = ep.title || '';
+
+      const link = document.createElement('a');
+      link.id = 'link-btn-' + ep.id;
+      link.className = 'post-link-btn';
+      link.href = '#ep-' + ep.id;
+      link.title = 'Copy link';
+      link.setAttribute('aria-label', 'Copy link to ' + (ep.title || 'episode'));
+      link.textContent = '🔗';
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        copyLink(ep.id);
+      });
+
+      titleRow.appendChild(title);
+      titleRow.appendChild(link);
+
+      const meta = document.createElement('div');
+      meta.className = 'post-meta';
+      meta.append(document.createTextNode(ep.date || ''));
+      (Array.isArray(ep.tags) ? ep.tags : []).forEach(tag => {
+        const span = document.createElement('span');
+        span.className = 'tag';
+        span.textContent = tag;
+        meta.append(document.createTextNode(' '));
+        meta.appendChild(span);
+      });
+
+      header.appendChild(show);
+      header.appendChild(titleRow);
+      header.appendChild(meta);
+      article.appendChild(header);
+
+      const audioWrap = document.createElement('div');
+      audioWrap.className = 'post-audio';
+
+      const icon = document.createElement('div');
+      icon.className = 'play-icon';
+      icon.setAttribute('role', 'img');
+      icon.setAttribute('aria-label', 'Play icon');
+      icon.textContent = '▶️';
+
+      const audioText = document.createElement('div');
+      const listenLabel = document.createElement('div');
+      listenLabel.className = 'listen-label';
+      listenLabel.textContent = 'Listen to this episode';
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.preload = 'none';
+      audio.src = ep.audio || '';
+      audio.setAttribute('aria-label', (ep.title || 'Episode') + ' audio');
+      audioText.appendChild(listenLabel);
+      audioText.appendChild(audio);
+      audioWrap.appendChild(icon);
+      audioWrap.appendChild(audioText);
+      article.appendChild(audioWrap);
+
+      const hasBlogPost = ep.blogPost && ep.blogPost.enabled;
+      if (hasBlogPost) {
+        if (ep.blogPost.subtitle) {
+          const subtitle = document.createElement('div');
+          subtitle.className = 'post-subtitle';
+          subtitle.textContent = ep.blogPost.subtitle;
+          article.appendChild(subtitle);
+        }
+        const body = document.createElement('div');
+        body.className = 'post-body';
+        body.innerHTML = marked.parse(ep.blogPost.body || '');
+        article.appendChild(body);
+
+        const details = document.createElement('details');
+        details.className = 'transcript-details';
+        const summary = document.createElement('summary');
+        summary.textContent = '📻 Radio transcript';
+        details.appendChild(summary);
+        details.appendChild(renderTranscript(ep.transcript));
+        article.appendChild(details);
+      } else {
+        article.appendChild(renderTranscript(ep.transcript));
+      }
+
+      return article;
+    }
+
     fetch('posts/episodes.json')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('episodes request failed');
+        return r.json();
+      })
       .then(data => {
         const container = document.getElementById('posts');
-        const eps = [...data.episodes].reverse();
-        let allHtml = '';
-        eps.forEach(ep => {
-          const tags = ep.tags.map(t => `<span class="tag">${t}</span>`).join('');
-          const hasBlogPost = ep.blogPost && ep.blogPost.enabled;
-
-          let bodyHtml = '';
-          if (hasBlogPost) {
-            bodyHtml = `
-              <div class="post-subtitle">${ep.blogPost.subtitle || ''}</div>
-              <div class="post-body">${marked.parse(ep.blogPost.body || '')}</div>
-              <details class="transcript-details">
-                <summary>📻 Radio transcript</summary>
-                <div class="post-transcript">${ep.transcript.split('\n\n').map(p => `<p>${p}</p>`).join('')}</div>
-              </details>`;
-          } else {
-            bodyHtml = `<div class="post-transcript">${ep.transcript.split('\n\n').map(p => `<p>${p}</p>`).join('')}</div>`;
-          }
-
-          allHtml += `
-            <article class="post${ep.featured ? ' featured' : ''}" id="ep-${ep.id}">
-              <div class="post-header">
-                <div class="post-show">${ep.emoji} ${ep.show}${ep.featured ? ' <span class="featured-badge">Featured</span>' : ''}</div>
-                <div class="post-title-row">
-                <h3 class="post-title">${ep.title}</h3>
-                <a id="link-btn-${ep.id}" class="post-link-btn" href="#ep-${ep.id}" onclick="event.preventDefault(); copyLink('${ep.id}')" title="Copy link" aria-label="Copy link to ${ep.title}">🔗</a>
-              </div>
-                <div class="post-meta">${ep.date} ${tags}</div>
-              </div>
-              <div class="post-audio">
-                <div class="play-icon" role="img" aria-label="Play icon">▶️</div>
-                <div>
-                  <div class="listen-label">Listen to this episode</div>
-                  <audio controls preload="none" src="${ep.audio}" aria-label="${ep.title} audio"></audio>
-                </div>
-              </div>
-              ${bodyHtml}
-            </article>
-          `;
-        });
-        container.innerHTML = allHtml;
+        const eps = Array.isArray(data.episodes) ? [...data.episodes].sort(compareEpisodes) : [];
+        const fragment = document.createDocumentFragment();
+        eps.forEach(ep => fragment.appendChild(renderEpisode(ep)));
+        container.replaceChildren(fragment);
         // Handle direct links like /#ep-009 after posts are rendered
         handleHash();
+      })
+      .catch(() => {
+        const container = document.getElementById('posts');
+        const error = document.createElement('p');
+        error.className = 'post-transcript';
+        error.textContent = 'Episodes failed to load.';
+        container.replaceChildren(error);
       });
   </script>
 </body>
