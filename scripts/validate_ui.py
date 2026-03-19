@@ -99,6 +99,40 @@ must_contain("consent !== '1'", "missing no-consent initial stars-off gate")
 must_contain("getCookie('pepperSkyPrefs')", "missing early prefs cookie read for initial stars state")
 must_contain("window.__starsEnabled = false", "missing early starsEnabled preload for no-flash path")
 
+# 8) No duplicate element IDs — each control ID must appear exactly once as id="..."
+import collections
+id_counts = collections.Counter(re.findall(r'id="([^"]+)"', html))
+for control_id in ["stars-canvas", "cookie-consent-btn", "stars-toggle-btn",
+                    "stars-power-btn", "sky-controls-panel", "sky-seed-input",
+                    "sky-randomize-btn"]:
+    count = id_counts.get(control_id, 0)
+    if count > 1:
+        errors.append(f"duplicate id=\"{control_id}\" found {count} times — must be unique")
+    elif count == 0:
+        errors.append(f"missing id=\"{control_id}\"")
+
+# 9) No JavaScript inside <style> blocks
+style_blocks = re.findall(r'<style>(.*?)</style>', html, re.DOTALL)
+for i, block in enumerate(style_blocks):
+    for js_pattern in [r'\bconst\s+\w+\s*=', r'\blet\s+\w+\s*=', r'\bvar\s+\w+\s*=',
+                        r'\bfunction\s+\w+\s*\(']:
+        if re.search(js_pattern, block):
+            errors.append(f"JavaScript found inside <style> block {i+1}: {js_pattern}")
+
+# 10) Accessibility: interactive elements should have aria-labels
+must_contain('aria-label="Toggle star animation"', "stars toggle button missing aria-label")
+must_contain('aria-label="Star animation settings"', "stars power button missing aria-label")
+must_contain('aria-label="Enable cookie consent', "cookie consent button missing aria-label")
+
+# 11) Performance: innerHTML should be assigned once, not appended in loop
+if 'container.innerHTML +=' in html:
+    errors.append("innerHTML += in loop causes O(n²) re-parsing — use single assignment")
+
+# 12) Footer image should have alt attribute
+if re.search(r'<img[^>]+pepper-headphones[^>]+(?<!alt="")>', html):
+    if not re.search(r'<img[^>]+pepper-headphones[^>]+alt=', html):
+        errors.append("footer image missing alt attribute")
+
 if errors:
     print("FAIL: UI validation")
     for e in errors:

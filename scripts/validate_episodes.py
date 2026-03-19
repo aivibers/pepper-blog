@@ -21,9 +21,12 @@ if not isinstance(episodes, list):
 ids = set()
 for i, ep in enumerate(episodes, 1):
     ctx = f'episode[{i}]'
-    for f in ['id','title','show','emoji','date','audio','tags','transcript']:
+    for f in ['id','title','show','emoji','date','audio','tags','transcript','featured']:
         if f not in ep:
             errors.append(f'{ctx}: missing field {f}')
+
+    if 'featured' in ep and not isinstance(ep['featured'], bool):
+        errors.append(f'{ctx}: featured must be boolean, got {type(ep["featured"]).__name__}')
 
     eid = ep.get('id','')
     if not re.fullmatch(r'\d{3}', str(eid)):

@@ -97,6 +97,38 @@ for pat in get_cookie_patterns:
             "Should use \\s* to handle both 'a=1; b=2' and 'a=1;b=2'"
         )
 
+# ── Test 6: Timer logic — setTimeout should not be immediately cleared ──
+# The pattern "setTimeout(...); clearTimeout(same)" is a no-op bug.
+# After the fix, toggleStars should clearTimeout the *opposite* timer, not its own.
+toggle_fn_match = re.search(r'function\s+toggleStars\s*\(\)\s*\{([\s\S]*?)\n    \}', html)
+if toggle_fn_match:
+    toggle_body = toggle_fn_match.group(1)
+    # Check that we don't set and immediately clear the same timer
+    if re.search(r'window\.__starsOnTimer\s*=\s*setTimeout.*?clearTimeout\(window\.__starsOnTimer\)', toggle_body, re.DOTALL):
+        errors.append(
+            "BROKEN TIMER: starsOnTimer is set via setTimeout then immediately cleared — "
+            "the timeout never fires"
+        )
+    if re.search(r'window\.__starsOffTimer\s*=\s*setTimeout.*?clearTimeout\(window\.__starsOffTimer\)', toggle_body, re.DOTALL):
+        errors.append(
+            "BROKEN TIMER: starsOffTimer is set via setTimeout then immediately cleared — "
+            "the timeout never fires"
+        )
+
+# ── Test 7: No duplicate <script> blocks containing the full star system ──
+# After cleanup, the first <script> should only be the early bootstrap (getCookie).
+# The main star system should be in a later <script> block, not duplicated.
+early_scripts = []
+for block in script_blocks:
+    if re.search(r'function\s+getCookie\b', block) and \
+       re.search(r'function\s+toggleStars\b', block):
+        early_scripts.append(block)
+if early_scripts:
+    errors.append(
+        "MERGED: getCookie and toggleStars should be in separate <script> blocks — "
+        "early bootstrap should only contain getCookie for no-flash"
+    )
+
 # ── Results ──
 if errors:
     print("FAIL: star system validation")
