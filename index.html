@@ -287,6 +287,14 @@
       cursor: pointer;
     }
     .site-header nav a:hover, .site-header nav button:hover { color: #f0883e; }
+    .nav-coming-soon {
+      margin-left: 1.5rem;
+      color: #484f58;
+      font-family: system-ui, sans-serif;
+      font-size: 0.9rem;
+      cursor: default;
+      user-select: none;
+    }
     button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
       outline: 2px solid rgba(240, 192, 64, 0.8);
       outline-offset: 2px;
@@ -304,7 +312,7 @@
       font-family: system-ui, sans-serif;
       white-space: nowrap;
       transition: all 0.2s;
-      margin-left: 0.6rem;
+      margin-left: 0.35rem;
       flex-shrink: 0;
     }
     .cookie-consent-btn:hover {
@@ -676,6 +684,7 @@
     <nav>
       <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle stars on/off" aria-label="Toggle star animation">✦</button>
       <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">⚙</button>
+      <span class="nav-coming-soon" title="Coming soon">Coming Soon</span>
       <a href="/radio/" aria-label="Open radio player">Radio Player</a>
       <a href="feed.xml" aria-label="Subscribe via RSS feed">RSS</a>
     </nav>
