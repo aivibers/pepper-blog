@@ -359,7 +359,7 @@
     /* Sky controls panel */
     .sky-controls {
       position: fixed;
-      right: 14px;
+      left: 14px;
       top: 78px;
       background: rgba(22, 27, 34, 0.92);
       backdrop-filter: blur(10px);
@@ -370,18 +370,19 @@
       font-family: system-ui, sans-serif;
       font-size: 0.8rem;
       color: #8b949e;
-      width: 220px;
+      min-width: 300px;
       cursor: default;
       user-select: none;
     }
-    .sky-controls:not(.show) { display: none; }
     .sky-controls .drag-handle {
       cursor: grab;
       text-align: center;
       color: #484f58;
       margin-bottom: 0.5rem;
       font-size: 0.7rem;
+      list-style: none;
     }
+    .sky-controls .drag-handle::-webkit-details-marker { display: none; }
     .sky-controls .drag-handle:active { cursor: grabbing; }
     .sky-controls label {
       display: flex;
@@ -391,7 +392,7 @@
       font-size: 0.75rem;
     }
     .sky-controls input[type="range"] {
-      width: 100px;
+      width: 140px;
       accent-color: #f0c040;
     }
     .sky-controls .seed-row {
@@ -627,11 +628,7 @@
     html.stars-off .stars-canvas { opacity: 0; transition: opacity 0.8s; }
     html.stars-on .stars-canvas { opacity: 1; transition: opacity 0.8s; }
 
-    /* ── sky controls panel (hidden until Konami unlock) ── */
-    .sky-controls {
-      position: fixed; bottom: 1rem; right: 1rem;
-      z-index: 100; font-family: system-ui, sans-serif; font-size: 0.8rem;
-    }
+    /* ── sky controls panel overrides ── */
     .stars-power-btn, .stars-toggle-btn {
       background: #21262d; border: 1px solid #30363d;
       color: #8b949e; cursor: pointer; border-radius: 6px;
@@ -639,8 +636,7 @@
     }
     .stars-power-btn:not(.revealed) { display: none; }
     .stars-toggle-btn { margin-right: 0.3rem; }
-    #sky-controls-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.5rem; min-width: 200px; }
-    #sky-controls-panel:not(.show) { display: none; }
+    #sky-controls-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.5rem; min-width: 300px; }
     #sky-seed-input { background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; padding: 0.2rem 0.4rem; width: 100%; margin-top: 0.3rem; font-size: 0.8rem; }
 
 
@@ -970,6 +966,23 @@
       syncSkyState();
     }
 
+    // === Early canvas sizing (must run before createStars) ===
+    let stars = [], animId = null, comet = null, constellation = null;
+    let viewportWidth = 0, viewportHeight = 0, pixelRatio = 1;
+
+    const warmColors = ['#FFE4B5','#FFD700','#FFA500','#FF8C00','#FFDAB9','#F0E68C'];
+    const coolColors = ['#B0C4DE','#87CEEB','#ADD8E6','#E0E0FF','#C8D8F0','#A8C8E8'];
+
+    function resizeCanvas() {
+      viewportWidth = window.innerWidth;
+      viewportHeight = window.innerHeight;
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(viewportWidth * pixelRatio);
+      canvas.height = Math.round(viewportHeight * pixelRatio);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+    resizeCanvas();
+
     // === Load prefs and init ===
     if (hasCookieConsent()) {
       const prefs = loadSkyPrefs();
@@ -1022,22 +1035,83 @@
     (function() {
       const handle = panel.querySelector('.drag-handle');
       if (!handle) return;
-      let dragging = false, ox, oy;
+      let dragging = false, didDrag = false, ox, oy;
       handle.addEventListener('mousedown', (e) => {
         dragging = true;
+        didDrag = false;
         const rect = panel.getBoundingClientRect();
         ox = e.clientX - rect.left; oy = e.clientY - rect.top;
         e.preventDefault();
       });
+      // Prevent toggle when drag occurred
+      handle.addEventListener('click', (e) => {
+        if (didDrag) { e.preventDefault(); didDrag = false; }
+      });
       document.addEventListener('mousemove', (e) => {
         if (!dragging) return;
-        panel.style.left = (e.clientX - ox) + 'px';
-        panel.style.top = (e.clientY - oy) + 'px';
+        didDrag = true;
+        const newLeft = e.clientX - ox;
+        const newTop = e.clientY - oy;
+        panel.style.left = newLeft + 'px';
+        panel.style.top = newTop + 'px';
         panel.style.right = 'auto';
       });
       document.addEventListener('mouseup', () => {
-        if (dragging) { dragging = false; saveSkyPrefs(); }
+        if (dragging) {
+          dragging = false;
+          saveSkyPanelPos();
+          saveSkyPrefs();
+        }
       });
+      // Touch support for dragging
+      handle.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        dragging = true;
+        didDrag = false;
+        const touch = e.touches[0];
+        const rect = panel.getBoundingClientRect();
+        ox = touch.clientX - rect.left; oy = touch.clientY - rect.top;
+      }, { passive: true });
+      document.addEventListener('touchmove', (e) => {
+        if (!dragging) return;
+        didDrag = true;
+        const touch = e.touches[0];
+        panel.style.left = (touch.clientX - ox) + 'px';
+        panel.style.top = (touch.clientY - oy) + 'px';
+        panel.style.right = 'auto';
+      }, { passive: true });
+      document.addEventListener('touchend', () => {
+        if (dragging) {
+          dragging = false;
+          saveSkyPanelPos();
+          saveSkyPrefs();
+        }
+      });
+
+      // Persist panel position
+      function saveSkyPanelPos() {
+        if (!hasCookieConsent()) return;
+        const rect = panel.getBoundingClientRect();
+        setCookie('pepperSkyPanelPos', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }), 365);
+      }
+
+      // Restore panel position
+      function restoreSkyPanelPos() {
+        const raw = getCookie('pepperSkyPanelPos');
+        if (!raw) return;
+        try {
+          const pos = JSON.parse(raw);
+          if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
+            // Clamp to viewport
+            const maxLeft = window.innerWidth - 100;
+            const maxTop = window.innerHeight - 100;
+            panel.style.left = Math.max(0, Math.min(pos.left, maxLeft)) + 'px';
+            panel.style.top = Math.max(0, Math.min(pos.top, maxTop)) + 'px';
+            panel.style.right = 'auto';
+          }
+        } catch(e) {}
+      }
+      restoreSkyPanelPos();
     })();
 
     // === Seeded RNG ===
@@ -1055,22 +1129,7 @@
     }
 
     // === Star engine ===
-    let stars = [], animId = null, comet = null, constellation = null;
-    let viewportWidth = 0, viewportHeight = 0, pixelRatio = 1;
-
-    const warmColors = ['#FFE4B5','#FFD700','#FFA500','#FF8C00','#FFDAB9','#F0E68C'];
-    const coolColors = ['#B0C4DE','#87CEEB','#ADD8E6','#E0E0FF','#C8D8F0','#A8C8E8'];
-
-    function resizeCanvas() {
-      viewportWidth = window.innerWidth;
-      viewportHeight = window.innerHeight;
-      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(viewportWidth * pixelRatio);
-      canvas.height = Math.round(viewportHeight * pixelRatio);
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    }
     window.addEventListener('resize', () => { resizeCanvas(); reinitStars(); });
-    resizeCanvas();
 
     function createStars() {
       const p = skyState || syncSkyState();
