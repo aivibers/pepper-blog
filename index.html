@@ -850,9 +850,9 @@
     });
 
     function applyStarsDomState() {
+      document.documentElement.classList.remove('stars-off-initial');
       document.documentElement.classList.toggle('stars-on', starsOn);
       document.documentElement.classList.toggle('stars-off', !starsOn);
-      document.documentElement.classList.toggle('stars-off-initial', !starsOn);
     }
 
     function toggleStars() {
@@ -1283,13 +1283,13 @@
       { key: 'book-club', label: '📚 Book Club' }
     ];
     const DEFAULT_EXPANDED_STATE = {
-      'weird-history-minute': true,
-      'kernel-panic': true,
-      'late-night-dispatch': true,
-      'late-night-dispatch-daily': true,
-      'late-night-dispatch-specials': true,
-      'ai-shower-thoughts': true,
-      'book-club': true,
+      'weird-history-minute': false,
+      'kernel-panic': false,
+      'late-night-dispatch': false,
+      'late-night-dispatch-daily': false,
+      'late-night-dispatch-specials': false,
+      'ai-shower-thoughts': false,
+      'book-club': false,
     };
     let sidebarExpandedState = loadSidebarExpandedState();
     let currentEpisodes = [];
