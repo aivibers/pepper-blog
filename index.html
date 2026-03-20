@@ -294,6 +294,11 @@
       font-size: 0.9rem;
       cursor: default;
       user-select: none;
+      text-decoration: none;
+    }
+    .nav-coming-soon:hover {
+      text-decoration: underline;
+      color: #6e7681;
     }
     button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
       outline: 2px solid rgba(240, 192, 64, 0.8);
@@ -684,7 +689,7 @@
     <nav>
       <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle stars on/off" aria-label="Toggle star animation">✦</button>
       <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">⚙</button>
-      <span class="nav-coming-soon" title="Coming soon">Coming Soon</span>
+      <span class="nav-coming-soon" title="Something's brewing... stay tuned 🌶️">Coming Soon!</span>
       <a href="/radio/" aria-label="Open radio player">Radio Player</a>
       <a href="feed.xml" aria-label="Subscribe via RSS feed">RSS</a>
     </nav>
