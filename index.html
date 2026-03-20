@@ -359,7 +359,7 @@
     /* Sky controls panel */
     .sky-controls {
       position: fixed;
-      left: 14px;
+      right: 14px;
       top: 78px;
       background: rgba(22, 27, 34, 0.92);
       backdrop-filter: blur(10px);
@@ -994,12 +994,14 @@
         starsOn = false;
         starsToggleBtn.style.opacity = '0.4';
       } else {
-        // Default: stars on
-        toggleStars();
+        // Default: stars off
+        starsOn = false;
+        starsToggleBtn.style.opacity = '0.4';
       }
     } else {
-      // No consent: stars on by default
-      toggleStars();
+      // No consent: stars off by default
+      starsOn = false;
+      starsToggleBtn.style.opacity = '0.4';
     }
     syncSkyState();
 
