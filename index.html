@@ -105,7 +105,7 @@
     }
     .episode-sidebar {
       position: fixed;
-      top: 0;
+      top: var(--header-height, 64px);
       left: 0;
       bottom: 0;
       width: min(360px, calc(100vw - 2rem));
@@ -659,13 +659,13 @@
       <button id="sidebar-toggle-btn" class="sidebar-toggle" type="button" aria-label="Open episode navigation" aria-controls="episode-sidebar" aria-expanded="false">☰</button>
       <span class="sidebar-toggle-label">Browse episodes</span>
       <h1>🌶️ Pepper's Blog <span>/ radio transcripts + more</span></h1>
-      <button id="cookie-consent-btn" class="cookie-consent-btn" title="Feed me a cookie? Enables persistent star preferences" aria-label="Enable cookie consent for persistent star preferences">🍪 Cookie?</button>
     </div>
     <nav>
       <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle stars on/off" aria-label="Toggle star animation">✦</button>
       <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">⚙</button>
       <a href="/radio/" aria-label="Open radio player">Radio Player</a>
       <a href="feed.xml" aria-label="Subscribe via RSS feed">RSS</a>
+      <button id="cookie-consent-btn" class="cookie-consent-btn" title="Feed me a cookie? Enables persistent star preferences" aria-label="Enable cookie consent for persistent star preferences">🍪 Cookie?</button>
     </nav>
   </div>
 
@@ -1483,7 +1483,7 @@
         setSidebarOpen(false);
       }
     });
-    setSidebarOpen(getBooleanSessionValue(SIDEBAR_OPEN_KEY, window.innerWidth >= 1200), false);
+    setSidebarOpen(getBooleanSessionValue(SIDEBAR_OPEN_KEY, false), false);
 
     function compareEpisodes(a, b) {
       const dateA = typeof a.date === 'string' ? a.date : '';
