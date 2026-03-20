@@ -336,12 +336,19 @@
     /* Star power button - hidden until Konami */
     .stars-power-btn:not(.revealed) { display: none; }
     .stars-power-btn.revealed {
-      color: #7ee787;
-      font-size: 0.85rem;
+      color: #8b949e;
+      font-size: 0.9rem;
+      opacity: 0.6;
+      transition: opacity 0.2s, color 0.2s;
+    }
+    .stars-power-btn.revealed:hover {
+      opacity: 1;
+      color: #b0c4de;
     }
     .stars-power-btn.unlocked {
-      color: #f0c040;
-      text-shadow: 0 0 8px rgba(240, 192, 64, 0.6);
+      color: #b0c4de;
+      opacity: 1;
+      text-shadow: 0 0 6px rgba(176, 196, 222, 0.4);
     }
 
     /* Star canvas */
@@ -635,6 +642,7 @@
       padding: 0.3rem 0.6rem; font-size: 0.75rem;
     }
     .stars-power-btn:not(.revealed) { display: none; }
+    .stars-power-btn.revealed + .stars-toggle-btn { margin-left: 0.15rem; }
     .stars-toggle-btn { margin-right: 0.3rem; }
     #sky-controls-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.5rem; min-width: 300px; }
     #sky-seed-input { background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; padding: 0.2rem 0.4rem; width: 100%; margin-top: 0.3rem; font-size: 0.8rem; }
@@ -683,8 +691,8 @@
       <button id="cookie-consent-btn" class="cookie-consent-btn" title="Feed me a cookie? Enables persistent star preferences" aria-label="Enable cookie consent for persistent star preferences">🍪 Cookie?</button>
     </div>
     <nav>
+      <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">✧</button>
       <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle stars on/off" aria-label="Toggle star animation">✦</button>
-      <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">⚙</button>
       <span class="nav-coming-soon" title="Something's brewing... stay tuned 🌶️">Coming Soon!</span>
       <a href="/radio/" aria-label="Open radio player">Radio Player</a>
       <a href="feed.xml" aria-label="Subscribe via RSS feed">RSS</a>
