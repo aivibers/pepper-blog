@@ -338,17 +338,17 @@
     .stars-power-btn.revealed {
       color: #8b949e;
       font-size: 0.9rem;
-      opacity: 0.6;
+      opacity: 0.5;
       transition: opacity 0.2s, color 0.2s;
     }
     .stars-power-btn.revealed:hover {
       opacity: 1;
-      color: #b0c4de;
+      color: #f0883e;
     }
     .stars-power-btn.unlocked {
-      color: #b0c4de;
-      opacity: 1;
-      text-shadow: 0 0 6px rgba(176, 196, 222, 0.4);
+      color: #f0883e;
+      opacity: 0.8;
+      text-shadow: 0 0 6px rgba(240, 136, 62, 0.4);
     }
 
     /* Star canvas */
@@ -363,11 +363,15 @@
       pointer-events: none;
     }
 
-    /* Sky controls panel */
+    /* Sky controls panel — hidden until Konami reveals power button */
     .sky-controls {
+      display: none;
       position: fixed;
       right: 14px;
-      top: 78px;
+      top: 200px;
+    }
+    .sky-controls.revealed {
+      display: block;
       background: rgba(22, 27, 34, 0.92);
       backdrop-filter: blur(10px);
       border: 1px solid #30363d;
@@ -691,7 +695,7 @@
       <button id="cookie-consent-btn" class="cookie-consent-btn" title="Feed me a cookie? Enables persistent star preferences" aria-label="Enable cookie consent for persistent star preferences">🍪 Cookie?</button>
     </div>
     <nav>
-      <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">✧</button>
+      <button id="stars-power-btn" class="stars-power-btn" title="Star settings" aria-label="Star animation settings">☄</button>
       <button id="stars-toggle-btn" class="stars-toggle-btn" title="Toggle stars on/off" aria-label="Toggle star animation">✦</button>
       <span class="nav-coming-soon" title="Something's brewing... stay tuned 🌶️">Coming Soon!</span>
       <a href="/radio/" aria-label="Open radio player">Radio Player</a>
@@ -909,6 +913,7 @@
           const btn = starsPowerBtn;
           btn.classList.add('unlocked');
           btn.classList.add('revealed');
+          panel.classList.add('revealed');
           if (window.__konamiCount >= 3) {
             window.__konamiPinned = true;
           }
@@ -966,6 +971,7 @@
       }
       if (prefs.powerRevealed) {
         starsPowerBtn.classList.add('revealed');
+        panel.classList.add('revealed');
       }
       // Restore panel state from session or prefs
       const sessionPanel = getSessionValue('pepperSkyPanelOpen');
