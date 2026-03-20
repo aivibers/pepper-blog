@@ -405,7 +405,7 @@
     }
     .sky-controls input[type="range"] {
       width: 140px;
-      accent-color: #f0c040;
+      accent-color: #f0883e;
     }
     .sky-controls .seed-row {
       display: flex;
@@ -643,7 +643,7 @@
     /* ── sky controls panel overrides ── */
     .stars-power-btn, .stars-toggle-btn {
       background: #21262d; border: 1px solid #30363d;
-      color: #8b949e; cursor: pointer; border-radius: 6px;
+      cursor: pointer; border-radius: 6px;
       padding: 0.3rem 0.6rem; font-size: 0.75rem;
     }
     .stars-power-btn:not(.revealed) { display: none; }
@@ -845,6 +845,7 @@
     const setPanelOpen = (show, persist = true) => {
       panel.classList.toggle('show', show);
       panel.open = show;
+      starsPowerBtn.style.opacity = show ? '1' : '';
       if (persist && hasCookieConsent()) {
         setSessionValue('pepperSkyPanelOpen', show ? '1' : '0');
         saveSkyPrefs();
