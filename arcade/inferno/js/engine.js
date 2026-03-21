@@ -3,12 +3,14 @@
  * Three.js init, game loop, resize handler. Imports and coordinates all modules.
  */
 import * as THREE from 'three';
-import { createRoom } from './level.js';
+import { generateLevel } from './level.js';
 import { createPlayer } from './player.js';
 import { initHUD, showHUD, updateHUD } from './hud.js';
 import { WEAPONS, fireWeapon } from './weapons.js';
 import { spawnEnemy, updateEnemies, damageEnemy, removeEnemy } from './enemies.js';
 import { createSplatter, createDeathBurst, updateParticles } from './particles.js';
+import { createPickup, updatePickups, checkPickupCollision, cleanupPickups } from './pickups.js';
+import { progression, getEnemyCount, getEnemyTypes, addScore, addKill, nextLevel } from './game.js';
 
 // ── Game state ──
 const gameState = {
@@ -16,7 +18,9 @@ const gameState = {
   enemies: [],
   projectiles: [],
   particles: [],
+  pickups: [],
   damageFlash: 0,
+  doorUnlocked: false,
 };
 
 // ── Three.js setup ──
@@ -37,8 +41,8 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 document.getElementById('game-container').appendChild(renderer.domElement);
 
-// ── Level ──
-const level = createRoom(scene);
+// ── Level (generated on start) ──
+let level = null;
 
 // ── Player ──
 const player = createPlayer(camera, renderer.domElement);
@@ -55,6 +59,18 @@ damageOverlay.style.cssText = `
 `;
 document.body.appendChild(damageOverlay);
 
+// ── Level transition overlay ──
+const levelOverlay = document.createElement('div');
+levelOverlay.style.cssText = `
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0); pointer-events: none; z-index: 998;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Courier New', monospace; font-size: 3rem; font-weight: bold;
+  color: #44ffaa; text-shadow: 0 0 20px rgba(68,255,170,0.8);
+  opacity: 0; transition: opacity 0.3s;
+`;
+document.body.appendChild(levelOverlay);
+
 // ── Title screen ──
 const titleScreen = document.getElementById('title-screen');
 
@@ -64,7 +80,7 @@ renderer.domElement.addEventListener('click', () => {
     titleScreen.style.display = 'none';
     showHUD();
     player.requestLock();
-    spawnTestEnemies();
+    startLevel(progression.level);
   } else if (!player.pointerLocked) {
     player.requestLock();
   }
@@ -98,10 +114,95 @@ document.addEventListener('wheel', (e) => {
 });
 
 /**
+ * Start or restart a level: generate geometry, spawn enemies, place pickups.
+ * @param {number} levelNum
+ */
+function startLevel(levelNum) {
+  // Cleanup previous level
+  if (level) {
+    level.cleanup();
+  }
+  // Clean up old enemies
+  for (const enemy of gameState.enemies) {
+    if (enemy.alive) removeEnemy(scene, enemy);
+  }
+  gameState.enemies = [];
+
+  // Clean up old projectiles
+  for (const proj of gameState.projectiles) {
+    scene.remove(proj.mesh);
+    proj.mesh.material.dispose();
+  }
+  gameState.projectiles = [];
+
+  // Clean up old pickups
+  cleanupPickups(scene, gameState.pickups);
+  gameState.pickups = [];
+
+  // Reset door state
+  gameState.doorUnlocked = false;
+
+  // Generate new level
+  level = generateLevel(scene, levelNum);
+
+  // Move player to start position
+  player.position.copy(level.playerStart);
+  camera.position.copy(level.playerStart);
+
+  // Spawn enemies
+  const enemyCount = getEnemyCount(levelNum);
+  const availableTypes = getEnemyTypes(levelNum);
+
+  for (let i = 0; i < enemyCount; i++) {
+    // Distribute enemies across spawn points
+    const spawnIdx = i % Math.max(level.spawnPoints.length, 1);
+    const basePos = level.spawnPoints.length > 0
+      ? level.spawnPoints[spawnIdx].clone()
+      : new THREE.Vector3(5, 0, -5);
+
+    // Jitter position so they don't stack
+    basePos.x += (Math.random() - 0.5) * 3;
+    basePos.z += (Math.random() - 0.5) * 3;
+
+    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+    const enemy = spawnEnemy(scene, type, basePos);
+    gameState.enemies.push(enemy);
+  }
+
+  // Place pickups
+  for (let i = 0; i < level.pickupPoints.length; i++) {
+    const pos = level.pickupPoints[i];
+    const type = i % 2 === 0 ? 'health' : 'ammo';
+    const pickup = createPickup(scene, type, pos);
+    gameState.pickups.push(pickup);
+  }
+}
+
+/**
+ * Transition to the next level with a brief flash.
+ */
+function advanceLevel() {
+  nextLevel();
+
+  // Show level transition text
+  levelOverlay.textContent = `LEVEL ${progression.level}`;
+  levelOverlay.style.opacity = '1';
+  levelOverlay.style.background = 'rgba(0, 0, 0, 0.6)';
+
+  setTimeout(() => {
+    startLevel(progression.level);
+    setTimeout(() => {
+      levelOverlay.style.opacity = '0';
+      levelOverlay.style.background = 'rgba(0, 0, 0, 0)';
+    }, 800);
+  }, 600);
+}
+
+/**
  * Try to fire the current weapon.
  */
 function tryFire() {
-  if (gameState.screen !== 'playing' || !player.pointerLocked) return;
+  if (gameState.screen !== 'playing' || !player.pointerLocked || !level) return;
 
   fireWeapon(
     scene,
@@ -125,22 +226,19 @@ function onWeaponHit(enemy, damage, point, normal) {
   const weapon = WEAPONS[player.state.weapon];
 
   if (enemy) {
-    // Damage the enemy
     const killed = damageEnemy(enemy, damage);
-    // Splatter at hit point
     gameState.particles.push(createSplatter(scene, point, normal, enemy.color));
 
     if (killed) {
       onEnemyDeath(enemy);
     }
   } else {
-    // Wall hit — paint splatter
     gameState.particles.push(createSplatter(scene, point, normal, weapon.color));
   }
 }
 
 /**
- * Handle enemy death: burst + splatters + cleanup.
+ * Handle enemy death: burst + splatters + score + cleanup.
  */
 function onEnemyDeath(enemy) {
   const pos = enemy.mesh.position.clone();
@@ -153,24 +251,13 @@ function onEnemyDeath(enemy) {
   const floorNormal = new THREE.Vector3(0, 1, 0);
   gameState.particles.push(createSplatter(scene, pos.clone().setY(0.01), floorNormal, enemy.color));
 
+  // Score + kill tracking
+  const scoreMap = { blob: 100, spitter: 200, charger: 300, tank: 500 };
+  addScore(scoreMap[enemy.type] || 100);
+  addKill();
+
   // Remove mesh from scene
   removeEnemy(scene, enemy);
-}
-
-/**
- * Spawn test enemies for initial combat testing.
- */
-function spawnTestEnemies() {
-  const positions = [
-    new THREE.Vector3(-5, 0, -5),
-    new THREE.Vector3(5, 0, -7),
-    new THREE.Vector3(0, 0, -8),
-  ];
-
-  for (const pos of positions) {
-    const enemy = spawnEnemy(scene, 'blob', pos);
-    gameState.enemies.push(enemy);
-  }
 }
 
 // ── Resize handler ──
@@ -189,14 +276,14 @@ let lastTime = 0;
 function gameLoop(time) {
   requestAnimationFrame(gameLoop);
 
-  const dt = Math.min((time - lastTime) / 1000, 0.05); // cap delta to avoid spiral
+  const dt = Math.min((time - lastTime) / 1000, 0.05);
   lastTime = time;
 
-  if (gameState.screen === 'playing') {
+  if (gameState.screen === 'playing' && level) {
     // ── Player update ──
     player.update(dt, level.walls);
 
-    // ── Auto-fire if mouse held (for pistol rapid fire) ──
+    // ── Auto-fire if mouse held ──
     if (mouseDown) tryFire();
 
     // ── Update enemies ──
@@ -229,13 +316,36 @@ function gameLoop(time) {
     // ── Update particles ──
     updateParticles(gameState.particles, dt, scene);
 
+    // ── Update pickups ──
+    updatePickups(gameState.pickups, dt);
+    checkPickupCollision(gameState.pickups, player.position, player.state);
+
+    // ── Check if all enemies dead → unlock door ──
+    const allDead = gameState.enemies.every(e => !e.alive);
+    if (allDead && !gameState.doorUnlocked && level.door) {
+      gameState.doorUnlocked = true;
+      // Change door from golden to green (unlocked)
+      level.door.material.color.setHex(0x44ff44);
+      level.door.material.emissive.setHex(0x44ff44);
+      level.door.material.emissiveIntensity = 0.8;
+    }
+
+    // ── Check player near door → next level ──
+    if (gameState.doorUnlocked && level.door) {
+      const doorDist = player.position.distanceTo(level.door.position);
+      if (doorDist < 2.0) {
+        gameState.doorUnlocked = false; // prevent re-trigger
+        advanceLevel();
+      }
+    }
+
     // ── Auto-heal (1hp/sec) ──
     if (player.state.health > 0 && player.state.health < 100) {
       player.state.health = Math.min(100, player.state.health + dt);
     }
 
     // ── Update HUD ──
-    updateHUD(player.state);
+    updateHUD(player.state, { score: progression.score, level: progression.level });
   }
 
   renderer.render(scene, camera);
@@ -263,9 +373,6 @@ function updateProjectiles(dt) {
     }
 
     // Apply gravity for arcing projectiles (goo launcher)
-    if (proj.weapon.gravity || (proj.isEnemyProjectile === false && proj.weapon === WEAPONS[2])) {
-      // Only apply gravity to goo launcher projectiles
-    }
     if (!proj.isEnemyProjectile && proj.weapon.gravity) {
       proj.velocity.y += PROJECTILE_GRAVITY * dt;
     }
@@ -282,7 +389,6 @@ function updateProjectiles(dt) {
         gameState.damageFlash = 0.3;
         proj.alive = false;
 
-        // Splatter
         const normal = new THREE.Vector3(0, 1, 0);
         gameState.particles.push(createSplatter(scene, projPos.clone(), normal, proj.weapon.color));
         continue;
@@ -293,7 +399,6 @@ function updateProjectiles(dt) {
         if (!enemy.alive) continue;
         const dist = projPos.distanceTo(enemy.mesh.position);
         if (dist < enemy.size * 0.7) {
-          // Direct hit
           const killed = damageEnemy(enemy, proj.weapon.damage);
           const hitNormal = projPos.clone().sub(enemy.mesh.position).normalize();
           gameState.particles.push(createSplatter(scene, projPos.clone(), hitNormal, proj.weapon.color));
@@ -321,12 +426,11 @@ function updateProjectiles(dt) {
     }
 
     // ── Wall collision (AABB check against each wall) ──
-    if (proj.alive) {
+    if (proj.alive && level) {
       for (const wall of level.walls) {
         const box = new THREE.Box3().setFromObject(wall);
         if (box.containsPoint(projPos)) {
           proj.alive = false;
-          // Wall splatter
           const normal = new THREE.Vector3();
           const center = new THREE.Vector3();
           box.getCenter(center);
