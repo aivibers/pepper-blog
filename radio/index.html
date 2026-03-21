@@ -397,7 +397,7 @@
           if (activeEl) activeEl.classList.remove('active');
           el.classList.add('active');
           activeEl = el;
-          player.src = seg.audio;
+          player.src = '/' + seg.audio;
           // Initialize visualizer on first interaction (AudioContext needs user gesture)
           if (!visualizerReady) initVisualizer();
           if (audioContext && audioContext.state === 'suspended') audioContext.resume();
