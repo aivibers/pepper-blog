@@ -140,9 +140,9 @@
 
     for (var row = tileTop; row <= tileBottom; row++) {
       for (var col = tileLeft; col <= tileRight; col++) {
-        // Out of bounds = wall
+        // Out of bounds — allow if beyond a door opening, block otherwise
         if (row < 0 || row >= R.FULL_ROOM_H || col < 0 || col >= R.FULL_ROOM_W) {
-          return true;
+          continue; // let engine.js handle door exit detection
         }
         if (tiles[row][col] === 1) {
           return true;
