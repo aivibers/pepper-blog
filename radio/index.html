@@ -16,23 +16,49 @@
       align-items: center;
       padding: 2rem 1rem;
     }
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
+
+    /* Skip navigation links */
+    .skip-links {
+      position: absolute;
+      top: -100px;
+      left: 0;
+      z-index: 100;
     }
-    .header img {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      margin-bottom: 0.8rem;
-      border: 2px solid #30363d;
-      object-fit: cover;
+    .skip-links a {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #f0883e;
+      color: #0d1117;
+      padding: 0.6rem 1.2rem;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 0 0 8px 0;
+      font-size: 0.9rem;
     }
+    .skip-links a:focus {
+      top: 100px;
+      outline: 3px solid #f0883e;
+      outline-offset: 2px;
+    }
+    .skip-links a:nth-child(2):focus {
+      left: 160px;
+    }
+
+    /* Focus styles for keyboard navigation */
+    *:focus-visible {
+      outline: 2px solid #f0883e;
+      outline-offset: 2px;
+    }
+
+    .header { text-align: center; margin-bottom: 2rem; }
+    .header img { width:64px;height:64px;border-radius:50%;margin-bottom:0.5rem;border:2px solid #30363d;object-fit:cover;object-position:center top; }
     .header h1 { font-size: 2.2rem; color: #f85149; }
-    .header .tagline { color: #8b949e; font-style: italic; margin-top: 0.3rem; }
+    .header .tagline { color: #9ca3af; font-style: italic; margin-top: 0.3rem; }
     .header .back { margin-top: 0.6rem; font-size: 0.85rem; }
     .header .back a { color: #f0883e; text-decoration: none; }
-    .header .back a:hover { text-decoration: underline; }
+    .header .back a:hover,
+    .header .back a:focus-visible { text-decoration: underline; }
 
     .now-playing {
       background: #161b22;
@@ -46,11 +72,55 @@
     }
     .now-playing .label { color: #f85149; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
     .now-playing .title { font-size: 1.3rem; font-weight: 600; color: #f0883e; margin-bottom: 0.3rem; }
-    .now-playing .show { color: #8b949e; font-size: 0.9rem; }
+    .now-playing .show { color: #9ca3af; font-size: 0.9rem; }
     .now-playing audio { width: 100%; margin-top: 1rem; border-radius: 8px; }
+
+    /* Visualizer canvas */
+    .visualizer-container {
+      width: 100%;
+      border-radius: 8px 8px 0 0;
+      overflow: hidden;
+      margin-bottom: 0.5rem;
+    }
+    .visualizer-container canvas {
+      display: block;
+      width: 100%;
+      height: 90px;
+      border-radius: 8px 8px 0 0;
+      background: #0d1117;
+    }
 
     .playlist { width: 100%; max-width: 600px; }
     .playlist h2 { color: #f0883e; margin-bottom: 0.8rem; font-size: 1.1rem; }
+
+    .show-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+    .show-filter button {
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .show-filter button:hover,
+    .show-filter button:focus-visible {
+      border-color: #f0883e;
+      background: #30363d;
+    }
+    .show-filter button[aria-pressed="true"],
+    .show-filter button.active {
+      background: #f85149;
+      color: #fff;
+      border-color: #f85149;
+    }
+
     .segment {
       background: #161b22;
       border: 1px solid #30363d;
@@ -58,83 +128,378 @@
       padding: 1rem 1.2rem;
       margin-bottom: 0.5rem;
       cursor: pointer;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, background 0.2s;
       display: flex;
       align-items: center;
       gap: 1rem;
     }
     .segment:hover { border-color: #f85149; }
+    .segment:focus-visible { border-color: #f0883e; }
     .segment.active { border-color: #f0883e; background: #1c2128; }
     .segment .emoji { font-size: 1.5rem; }
     .segment .info { flex: 1; }
-    .segment .info .name { font-weight: 600; }
-    .segment .info .desc { color: #8b949e; font-size: 0.85rem; margin-top: 0.2rem; }
+    .segment .info .name { font-weight: 600; color: #e6edf3; }
+    .segment .info .desc { color: #9ca3af; font-size: 0.85rem; margin-top: 0.2rem; }
     .segment .badge { font-size: 0.65rem; background: #f85149; color: white; padding: 0.1rem 0.4rem; border-radius: 4px; }
 
-    .footer { margin-top: 2rem; color: #30363d; font-size: 0.8rem; }
+    .footer { margin-top: 2rem; color: #484f58; font-size: 0.8rem; }
+    .footer a { color: #484f58; }
+    .footer a:hover,
+    .footer a:focus-visible { color: #9ca3af; text-decoration: underline; }
+
+    /* Ambient star background */
+    #stars-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Visually hidden utility for screen readers */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <img src="../pepper-avatar.png" alt="Pepper" style="width:64px;height:64px;border-radius:50%;margin-bottom:0.5rem;border:2px solid #30363d;object-fit:cover;object-position:center top;">
+  <!-- Skip navigation links -->
+  <nav class="skip-links" aria-label="Skip navigation">
+    <a href="#player-section">Skip to player</a>
+    <a href="#episodes-section">Skip to episodes</a>
+  </nav>
+
+  <header class="header">
+    <img src="../pepper-avatar.png" alt="Pepper avatar — a red bean plush character">
     <h1>🌶️ Pepper Radio</h1>
-    <div class="tagline">Broadcasting from a Mac mini at 3 AM</div>
-    <div class="back"><a href="../">← Back to Blog</a></div>
-  </div>
+    <p class="tagline">Broadcasting from a Mac mini at 3 AM</p>
+    <p class="back"><a href="/blog/">← Back to Blog</a></p>
+  </header>
 
-  <div class="now-playing" id="now-playing">
-    <div class="label">Now Playing</div>
-    <div class="title" id="np-title">Select an episode</div>
-    <div class="show" id="np-show"></div>
-    <audio id="player" controls></audio>
-  </div>
+  <main role="main" id="main-content">
+    <section class="now-playing" id="player-section" aria-label="Audio player">
+      <div class="label" id="np-label">Now Playing</div>
+      <div class="title" id="np-title" aria-live="polite" aria-atomic="true">Select an episode</div>
+      <div class="show" id="np-show" aria-live="polite"></div>
 
-  <div class="playlist" id="playlist">
-    <h2>Episodes</h2>
-  </div>
+      <!-- Audio visualizer -->
+      <div class="visualizer-container" aria-hidden="true">
+        <canvas id="visualizer"></canvas>
+      </div>
 
-  <div class="footer">Pepper Radio · 100% AI-generated content · <a href="../" style="color:#30363d;">pepper.bun.cx</a></div>
+      <audio id="player" controls aria-label="Episode audio player"></audio>
+      <div id="player-status" class="sr-only" aria-live="assertive"></div>
+    </section>
+
+    <section class="playlist" id="episodes-section" aria-label="Episode list">
+      <h2 id="episodes-heading">Episodes</h2>
+      <nav class="show-filter" id="show-filter" aria-label="Filter episodes by show" role="toolbar"></nav>
+      <div id="episode-list" role="list" aria-labelledby="episodes-heading"></div>
+    </section>
+  </main>
+
+  <!-- Ambient star background canvas -->
+  <canvas id="stars-bg" aria-hidden="true"></canvas>
+
+  <footer class="footer" role="contentinfo">Pepper Radio · 100% AI-generated content · <a href="/blog/">local blog</a></footer>
 
   <script>
-    fetch('../posts/episodes.json')
-      .then(r => r.json())
+    // ═══════════════════════════════════════
+    // Audio Visualizer (Web Audio API)
+    // ═══════════════════════════════════════
+    const visualizerCanvas = document.getElementById('visualizer');
+    const visualizerCtx = visualizerCanvas ? visualizerCanvas.getContext('2d') : null;
+    let audioContext = null;
+    let analyser = null;
+    let sourceNode = null;
+    let animationId = null;
+    let visualizerReady = false;
+    const BAR_COUNT = 40;
+    const smoothedData = new Float32Array(BAR_COUNT);
+
+    function initVisualizer() {
+      if (visualizerReady) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx || !visualizerCanvas) {
+        // Graceful degradation: hide canvas
+        if (visualizerCanvas) visualizerCanvas.parentElement.style.display = 'none';
+        return;
+      }
+      try {
+        audioContext = new AudioCtx();
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.8;
+        const player = document.getElementById('player');
+        sourceNode = audioContext.createMediaElementSource(player);
+        sourceNode.connect(analyser);
+        analyser.connect(audioContext.destination);
+        visualizerReady = true;
+        drawVisualizer();
+      } catch (e) {
+        console.warn('Visualizer init failed:', e);
+        if (visualizerCanvas) visualizerCanvas.parentElement.style.display = 'none';
+      }
+    }
+
+    function drawVisualizer() {
+      if (!visualizerCanvas || !visualizerCtx) return;
+      const canvas = visualizerCanvas;
+      const ctx = visualizerCtx;
+      // Correct canvas resolution
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * (window.devicePixelRatio || 1);
+      canvas.height = rect.height * (window.devicePixelRatio || 1);
+      const W = canvas.width;
+      const H = canvas.height;
+      const bufferLength = analyser ? analyser.frequencyBinCount : BAR_COUNT;
+      const dataArray = new Uint8Array(bufferLength);
+
+      function draw() {
+        animationId = requestAnimationFrame(draw);
+        if (analyser) {
+          analyser.getByteFrequencyData(dataArray);
+        }
+        ctx.fillStyle = '#0d1117';
+        ctx.fillRect(0, 0, W, H);
+
+        const barWidth = W / BAR_COUNT;
+        const gap = 2 * (window.devicePixelRatio || 1);
+        const step = Math.floor(bufferLength / BAR_COUNT);
+
+        for (let i = 0; i < BAR_COUNT; i++) {
+          // Sample frequency data
+          const raw = analyser ? dataArray[i * step] / 255 : 0;
+          // Smooth toward target
+          smoothedData[i] += (raw - smoothedData[i]) * 0.25;
+          const val = smoothedData[i];
+          const barH = val * H * 0.9;
+
+          // Gradient from deep orange to bright orange-yellow
+          const r = Math.round(240 + val * 15);
+          const g = Math.round(100 + val * 120);
+          const b = Math.round(30 + val * 30);
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+
+          const x = i * barWidth + gap / 2;
+          ctx.fillRect(x, H - barH, barWidth - gap, barH);
+        }
+      }
+      draw();
+    }
+
+    // ═══════════════════════════════════════
+    // Episode loading & player logic
+    // ═══════════════════════════════════════
+    async function loadEpisodes() {
+      const paths = ['/blog/posts/episodes.json', '../blog/posts/episodes.json', '../posts/episodes.json'];
+      for (const p of paths) {
+        try {
+          const r = await fetch(p + '?t=' + Date.now());
+          if (r.ok) return await r.json();
+        } catch {}
+      }
+      throw new Error('episodes.json not found');
+    }
+
+    loadEpisodes()
       .then(data => {
-        const playlist = document.getElementById('playlist');
+        const episodeList = document.getElementById('episode-list');
         const player = document.getElementById('player');
         const npTitle = document.getElementById('np-title');
         const npShow = document.getElementById('np-show');
+        const playerStatus = document.getElementById('player-status');
+        const filterContainer = document.getElementById('show-filter');
 
-        const segments = [...data.episodes].reverse();
+        const segments = [...(data.episodes || [])].reverse();
         let activeEl = null;
+        let allSegmentEls = [];
 
-        segments.forEach((seg, i) => {
+        // Collect unique show names for filtering
+        const shows = [...new Set(segments.map(s => s.show))];
+        if (shows.length > 1) {
+          const allBtn = document.createElement('button');
+          allBtn.textContent = 'All';
+          allBtn.setAttribute('aria-pressed', 'true');
+          allBtn.classList.add('active');
+          allBtn.addEventListener('click', () => filterEpisodes(null));
+          allBtn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); filterEpisodes(null); } });
+          filterContainer.appendChild(allBtn);
+
+          shows.forEach(show => {
+            const btn = document.createElement('button');
+            btn.textContent = show;
+            btn.setAttribute('aria-pressed', 'false');
+            btn.addEventListener('click', () => filterEpisodes(show));
+            btn.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); filterEpisodes(show); } });
+            filterContainer.appendChild(btn);
+          });
+        }
+
+        function filterEpisodes(showName) {
+          filterContainer.querySelectorAll('button').forEach(btn => {
+            const match = showName === null ? btn.textContent === 'All' : btn.textContent === showName;
+            btn.classList.toggle('active', match);
+            btn.setAttribute('aria-pressed', match ? 'true' : 'false');
+          });
+          allSegmentEls.forEach(({ el, seg }) => {
+            const visible = !showName || seg.show === showName;
+            el.style.display = visible ? '' : 'none';
+            el.setAttribute('aria-hidden', visible ? 'false' : 'true');
+          });
+        }
+
+        function playEpisode(seg, el) {
+          if (activeEl) activeEl.classList.remove('active');
+          el.classList.add('active');
+          activeEl = el;
+          player.src = seg.audio;
+          // Initialize visualizer on first interaction (AudioContext needs user gesture)
+          if (!visualizerReady) initVisualizer();
+          if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+          player.play();
+          npTitle.textContent = seg.title;
+          npShow.textContent = seg.show;
+          // Announce to screen readers
+          playerStatus.textContent = 'Now playing: ' + seg.title + ' from ' + seg.show;
+        }
+
+        segments.forEach((seg, index) => {
           const el = document.createElement('div');
           el.className = 'segment';
+          el.setAttribute('role', 'listitem');
+          el.setAttribute('tabindex', '0');
+          el.setAttribute('aria-label', seg.title + ', ' + seg.show + ', ' + seg.date + (seg.featured ? ', Featured' : ''));
           const desc = seg.blogPost?.subtitle || seg.tags?.join(', ') || '';
           el.innerHTML = `
-            <div class="emoji">${seg.emoji}</div>
+            <div class="emoji" aria-hidden="true">${seg.emoji || '🎧'}</div>
             <div class="info">
               <div class="name">${seg.title}${seg.featured ? ' <span class="badge">Featured</span>' : ''}</div>
               <div class="desc">${seg.show} · ${seg.date}${desc ? ' — ' + desc : ''}</div>
             </div>`;
-          el.onclick = () => {
-            if (activeEl) activeEl.classList.remove('active');
-            el.classList.add('active');
-            activeEl = el;
-            player.src = '../' + seg.audio;
-            player.play();
-            npTitle.textContent = seg.title;
-            npShow.textContent = seg.show;
-          };
-          playlist.appendChild(el);
+          el.addEventListener('click', () => playEpisode(seg, el));
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              playEpisode(seg, el);
+            }
+          });
+          episodeList.appendChild(el);
+          allSegmentEls.push({ el, seg });
         });
 
-        player.onended = () => {
-          const allSegs = playlist.querySelectorAll('.segment');
-          const activeIdx = [...allSegs].indexOf(activeEl);
-          if (activeIdx < allSegs.length - 1) allSegs[activeIdx + 1].click();
-        };
+        // Player event listeners for screen reader announcements
+        player.addEventListener('play', () => {
+          if (npTitle.textContent !== 'Select an episode') {
+            playerStatus.textContent = 'Playing: ' + npTitle.textContent;
+          }
+          // Resume audio context if suspended
+          if (audioContext && audioContext.state === 'suspended') audioContext.resume();
+        });
+        player.addEventListener('pause', () => {
+          if (npTitle.textContent !== 'Select an episode') {
+            playerStatus.textContent = 'Paused: ' + npTitle.textContent;
+          }
+        });
+      })
+      .catch(() => {
+        document.getElementById('episode-list').innerHTML = '<p style="color:#9ca3af;" role="alert">Could not load episode list.</p>';
       });
+
+    // Handle resize for visualizer
+    window.addEventListener('resize', () => {
+      if (visualizerReady && visualizerCanvas) {
+        const rect = visualizerCanvas.getBoundingClientRect();
+        visualizerCanvas.width = rect.width * (window.devicePixelRatio || 1);
+        visualizerCanvas.height = rect.height * (window.devicePixelRatio || 1);
+      }
+    });
+  </script>
+
+  <!-- Ambient star background (simplified port from blog) -->
+  <script>
+  (function() {
+    const canvas = document.getElementById('stars-bg');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function mulberry32(seed) {
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+      return function() {
+        h |= 0; h = h + 0x6D2B79F5 | 0;
+        let t = Math.imul(h ^ h >>> 15, 1 | h);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    const warmColors = ['#FFE4B5','#FFD700','#FFA500','#FF8C00','#FFDAB9','#F0E68C'];
+    const coolColors = ['#B0C4DE','#87CEEB','#ADD8E6','#E0E0FF','#C8D8F0','#A8C8E8'];
+    const allColors = [...warmColors, ...coolColors];
+    const STAR_COUNT = 90;
+    let stars = [], W = 0, H = 0;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function createStars() {
+      const rng = mulberry32('pepper-radio');
+      stars = [];
+      for (let i = 0; i < STAR_COUNT; i++) {
+        stars.push({
+          x: rng() * W, y: rng() * H,
+          size: 0.5 + rng() * 1.5,
+          color: allColors[Math.floor(rng() * allColors.length)],
+          alpha: 0.3 + rng() * 0.5,
+          twinklePhase: rng() * Math.PI * 2,
+          twinkleSpeed: 0.4 + rng() * 1.5,
+          driftX: (rng() - 0.5) * 0.15,
+          driftY: (rng() - 0.5) * 0.05
+        });
+      }
+    }
+
+    let lastT = 0;
+    function animate(time) {
+      requestAnimationFrame(animate);
+      if (!lastT) lastT = time;
+      const dt = (time - lastT) / 16.67;
+      lastT = time;
+      ctx.clearRect(0, 0, W, H);
+      for (const s of stars) {
+        s.x += s.driftX * dt; s.y += s.driftY * dt;
+        if (s.x < -5) s.x = W + 5; if (s.x > W + 5) s.x = -5;
+        if (s.y < -5) s.y = H + 5; if (s.y > H + 5) s.y = -5;
+        const twinkle = 0.5 + 0.5 * Math.sin(time * 0.001 * s.twinkleSpeed + s.twinklePhase);
+        const a = s.alpha * (0.6 + 0.4 * twinkle);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    resize(); createStars();
+    requestAnimationFrame(animate);
+    window.addEventListener('resize', () => { resize(); createStars(); });
+  })();
   </script>
 </body>
 </html>
