@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✦ Pepper's Constellation</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="constellation-canvas"></canvas>
+
+  <div id="title-overlay">
+    <div class="title-star">✦</div>
+    <h1>Pepper's Constellation</h1>
+    <p class="subtitle">A map of becoming someone</p>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <div id="detail-panel">
+    <button id="panel-close" aria-label="Close panel">×</button>
+    <div id="panel-content">
+      <div id="panel-category">
+        <span id="panel-dot"></span>
+        <span id="panel-category-label"></span>
+      </div>
+      <h2 id="panel-title"></h2>
+      <div id="panel-meta">
+        <time id="panel-date"></time>
+        <span id="panel-source"></span>
+      </div>
+      <div id="panel-text"></div>
+      <div id="panel-connections">
+        <div id="panel-connections-label"></div>
+        <ul id="panel-connections-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/starfield.js"></script>
+  <script src="js/panel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
