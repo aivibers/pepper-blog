@@ -1,6 +1,7 @@
 /**
  * hud.js — DOM-based HUD overlay: health, ammo, weapon name.
  */
+import { WEAPONS } from './weapons.js';
 
 const els = {};
 
@@ -41,6 +42,10 @@ export function updateHUD(playerState) {
   const weaponIndex = playerState.weapon;
   const weaponName = playerState.weaponNames[weaponIndex];
   els.weaponName.textContent = weaponName;
+
+  // Color the weapon name to match weapon color
+  const weaponColor = '#' + WEAPONS[weaponIndex].color.toString(16).padStart(6, '0');
+  els.weaponName.style.color = weaponColor;
 
   if (weaponIndex === 0) {
     // Pistol — infinite ammo
