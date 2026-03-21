@@ -1,5 +1,5 @@
 /* items.js — Collectible items: potions, gold, keys, sword upgrades */
-/* globals: window.Items, window.Renderer */
+/* globals: window.Items, window.Renderer, window.SFX */
 
 (function () {
   'use strict';
@@ -52,11 +52,18 @@
         it.collected = true;
 
         // apply effect
-        if (it.heal > 0) {
+        if (it.type === 'key') {
+          player.hasKey = true;
+          window.SFX.play('key');
+        } else if (it.heal > 0) {
           player.hp = Math.min(player.hp + it.heal, player.maxHp);
-        }
-        if (it.damage > 0) {
+          window.SFX.play('pickup');
+        } else if (it.damage > 0) {
           player.swordDamage = (player.swordDamage || 2) + it.damage;
+          window.SFX.play('pickup');
+        } else if (it.type === 'gold') {
+          player.gold = (player.gold || 0) + 1;
+          window.SFX.play('pickup');
         }
         events.push(it);
       }
@@ -112,8 +119,9 @@
           ctx.fillText('$', sx + sz / 2, sy + sz / 2);
           break;
 
-        /* key — silver key shape */
+        /* key — golden key shape */
         case 'key':
+          ctx.fillStyle = '#ffd700';
           // handle ring
           ctx.beginPath();
           ctx.arc(sx + sz * 0.3, sy + sz / 2, sz * 0.2, 0, Math.PI * 2);

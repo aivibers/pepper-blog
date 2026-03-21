@@ -1,6 +1,6 @@
 /* engine.js — Game loop, state machine, input handling */
 /* globals: window.Game, window.Renderer, window.Player, window.Dungeon,
-            window.HUD, window.Enemies, window.Combat, window.Items */
+            window.HUD, window.Enemies, window.Combat, window.Items, window.SFX */
 
 (function () {
   'use strict';
@@ -32,6 +32,8 @@
   var dungeon = null;
   var lastTime = 0;
   var score = 0;
+  var gold = 0;
+  var kills = 0;
   var floor = 1;
   var transitionTimer = 0;
 
@@ -61,10 +63,12 @@
     // Start on title screen
     setState(STATES.TITLE);
 
-    // Listen for ENTER to start
+    // Listen for SPACE to start / restart
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        if (state === STATES.TITLE || state === STATES.DEAD) {
+      if (e.key === ' ' || e.key === 'Space' || e.key === 'Enter') {
+        if (state === STATES.TITLE) {
+          startGame();
+        } else if (state === STATES.DEAD) {
           startGame();
         }
       }
@@ -87,12 +91,15 @@
       titleOverlay.classList.add('hidden');
       hudBar.classList.add('visible');
     } else if (state === STATES.DEAD) {
+      titleOverlay.classList.add('hidden');
       hudBar.classList.remove('visible');
     }
   }
 
   function startGame() {
     score = 0;
+    gold  = 0;
+    kills = 0;
     floor = 1;
 
     // Generate dungeon
@@ -102,6 +109,8 @@
     var spawnX = 7 * R.TILE_SIZE;
     var spawnY = 6 * R.TILE_SIZE;
     player = Player.create(spawnX, spawnY);
+    player.hasKey = false;
+    player.gold = 0;
 
     // Starting room is safe — mark cleared
     var start = dungeon.rooms[1][1];
@@ -109,10 +118,54 @@
     start.enemies = [];
     start.items   = [];
 
+    // Spawn key in key room
+    spawnKeyInRoom();
+
     // Clear projectiles from previous game
     Combat.projectiles.length = 0;
 
     setState(STATES.PLAYING);
+  }
+
+  // ── Floor progression ──
+
+  function advanceFloor() {
+    floor++;
+    SFX.play('stairs');
+
+    // Generate new dungeon
+    dungeon = Dungeon.generate(floor);
+
+    // Reset player position, keep stats
+    var spawnX = 7 * R.TILE_SIZE;
+    var spawnY = 6 * R.TILE_SIZE;
+    player.x = spawnX;
+    player.y = spawnY;
+    player.hasKey = false;
+    player.invincible = false;
+    player.invTimer = 0;
+    player.knockbackTimer = 0;
+
+    // Starting room safe
+    var start = dungeon.rooms[1][1];
+    start.cleared = true;
+    start.enemies = [];
+    start.items   = [];
+
+    // Spawn key in key room
+    spawnKeyInRoom();
+
+    // Clear projectiles
+    Combat.projectiles.length = 0;
+  }
+
+  function spawnKeyInRoom() {
+    var kr = dungeon.keyRoom;
+    var keyRoom = dungeon.rooms[kr.row][kr.col];
+    if (!keyRoom.items) keyRoom.items = [];
+    // Spawn key in center of key room
+    var ts = R.TILE_SIZE;
+    keyRoom.items.push(Items.spawn('key', 7 * ts, 5 * ts));
   }
 
   // ── Room enter logic ──
@@ -122,6 +175,7 @@
       room.enemies = Enemies.spawnForRoom(room, floor);
     }
     if (!room.items) room.items = [];
+    SFX.play('door');
   }
 
   // ── Drop spawning ──
@@ -224,6 +278,36 @@
     setState(STATES.ROOM_TRANSITION);
   }
 
+  // ── Stairs check ──
+
+  function checkStairs() {
+    if (!player.hasKey) return false;
+
+    var cr = dungeon.currentRoom;
+    var sr = dungeon.stairsRoom;
+
+    // Are we in the stairs room?
+    if (cr.row !== sr.row || cr.col !== sr.col) return false;
+
+    var room = currentRoom();
+    if (roomHasLiveEnemies(room)) return false;
+
+    // Check if player is standing on the stairs tile area (center of room)
+    var ts = R.TILE_SIZE;
+    var stairsX = 6.5 * ts;
+    var stairsY = 5.5 * ts;
+    var ps = player.size || 12;
+    var cx = player.x + ps / 2;
+    var cy = player.y + ps / 2;
+    var dist = Math.sqrt((cx - stairsX) * (cx - stairsX) + (cy - stairsY) * (cy - stairsY));
+
+    if (dist < ts * 1.5) {
+      advanceFloor();
+      return true;
+    }
+    return false;
+  }
+
   // ── Game loop ──
 
   function loop(now) {
@@ -263,6 +347,7 @@
       if (killed) {
         for (var k = 0; k < killed.length; k++) {
           score += killed[k].points || 10;
+          kills++;
         }
       }
     } else {
@@ -304,9 +389,15 @@
       if (picked) {
         for (var p = 0; p < picked.length; p++) {
           score += picked[p].score || 0;
+          if (picked[p].type === 'gold') {
+            gold++;
+          }
         }
       }
     }
+
+    // Check stairs
+    if (checkStairs()) return;
 
     // Check door exit
     var exitDir = checkDoorExit();
@@ -316,7 +407,7 @@
     }
 
     // Update HUD
-    HUD.update({ floor: floor, score: score, player: player });
+    HUD.update({ floor: floor, score: score, gold: gold, player: player });
   }
 
   function render() {
@@ -329,6 +420,9 @@
 
       // Draw room tiles
       R.drawRoom(ctx, room);
+
+      // Draw stairs tile in stairs room
+      drawStairsTile(ctx, room);
 
       // Draw doors
       drawDoors(ctx, room);
@@ -368,19 +462,96 @@
       HUD.drawMinimap(ctx, dungeon);
 
     } else if (state === STATES.DEAD) {
-      ctx.fillStyle = R.PALETTE.bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      renderDeathScreen();
+    }
+  }
 
-      ctx.fillStyle = '#ff4444';
-      ctx.font = '48px "Courier New", monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('YOU DIED', canvas.width / 2, canvas.height / 2 - 30);
+  // ── Death screen ──
 
-      ctx.fillStyle = '#e6edf3';
-      ctx.font = '20px "Courier New", monospace';
-      ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 20);
-      ctx.fillText('Floor: ' + floor, canvas.width / 2, canvas.height / 2 + 50);
-      ctx.fillText('Press ENTER to Retry', canvas.width / 2, canvas.height / 2 + 90);
+  function renderDeathScreen() {
+    ctx.fillStyle = R.PALETTE.bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Vignette
+    var grd = ctx.createRadialGradient(
+      canvas.width / 2, canvas.height / 2, 50,
+      canvas.width / 2, canvas.height / 2, canvas.width * 0.6
+    );
+    grd.addColorStop(0, 'rgba(80,0,0,0.3)');
+    grd.addColorStop(1, 'rgba(0,0,0,0.8)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.textAlign = 'center';
+
+    // YOU DIED
+    ctx.fillStyle = '#ff2222';
+    ctx.font = 'bold 56px "Courier New", monospace';
+    ctx.fillText('YOU DIED', canvas.width / 2, canvas.height / 2 - 60);
+
+    // Decorative line
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(canvas.width / 2 - 120, canvas.height / 2 - 35, 240, 2);
+
+    // Stats
+    ctx.font = '18px "Courier New", monospace';
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText('Floor: ' + floor, canvas.width / 2, canvas.height / 2 + 5);
+
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 35);
+
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText('Kills: ' + kills, canvas.width / 2, canvas.height / 2 + 60);
+
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText('Gold: ' + gold, canvas.width / 2, canvas.height / 2 + 85);
+
+    // Prompt
+    ctx.fillStyle = '#888';
+    ctx.font = '16px "Courier New", monospace';
+    var blink = Math.sin(performance.now() / 400) > 0;
+    if (blink) {
+      ctx.fillText('Press SPACE to Restart', canvas.width / 2, canvas.height / 2 + 130);
+    }
+  }
+
+  // ── Stairs tile rendering ──
+
+  function drawStairsTile(ctx, room) {
+    if (!dungeon) return;
+    var cr = dungeon.currentRoom;
+    var sr = dungeon.stairsRoom;
+    if (cr.row !== sr.row || cr.col !== sr.col) return;
+
+    var ts = R.RENDER_TILE;
+    // Draw golden stairs at center (cols 6-7, rows 5-6)
+    var stairCells = [
+      { r: 5, c: 6 }, { r: 5, c: 7 },
+      { r: 6, c: 6 }, { r: 6, c: 7 }
+    ];
+
+    for (var i = 0; i < stairCells.length; i++) {
+      var sc = stairCells[i];
+      var sx = sc.c * ts;
+      var sy = sc.r * ts;
+
+      // Golden base
+      ctx.fillStyle = player && player.hasKey ? '#ffd700' : '#8B6914';
+      ctx.fillRect(sx + 4, sy + 4, ts - 8, ts - 8);
+
+      // Step lines
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      for (var j = 0; j < 3; j++) {
+        ctx.fillRect(sx + 6, sy + 8 + j * 12, ts - 12, 2);
+      }
+
+      // Sparkle when player has key
+      if (player && player.hasKey) {
+        var sparkle = Math.sin(performance.now() / 200 + i) * 0.3 + 0.4;
+        ctx.fillStyle = 'rgba(255,255,255,' + sparkle + ')';
+        ctx.fillRect(sx + ts / 2 - 3, sy + ts / 2 - 3, 6, 6);
+      }
     }
   }
 
@@ -424,6 +595,8 @@
     getKeys:    function () { return keys; },
     getScore:   function () { return score; },
     getFloor:   function () { return floor; },
+    getKills:   function () { return kills; },
+    getGold:    function () { return gold; },
     setState:   setState,
     startGame:  startGame
   };

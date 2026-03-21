@@ -1,5 +1,5 @@
 /* combat.js — Sword attacks, enemy contact, knockback, projectiles */
-/* globals: window.Combat, window.Renderer, window.Player */
+/* globals: window.Combat, window.Renderer, window.Player, window.SFX */
 
 (function () {
   'use strict';
@@ -49,9 +49,11 @@
 
     swingTimer = SWING_DURATION;
     swingDir   = player.facing;
+    window.SFX.play('sword');
 
     var sr = swordRect(player);
     var killed = [];
+    var hitAny = false;
 
     for (var i = 0; i < enemies.length; i++) {
       var e = enemies[i];
@@ -59,8 +61,14 @@
       if (aabb(sr.x, sr.y, sr.w, sr.h, e.x, e.y, e.size, e.size)) {
         e.hp -= player.swordDamage || 2;
         e.flashTimer = 0.12;
+        hitAny = true;
         applyKnockback(e, player.x, player.y, 120);
-        if (e.hp <= 0) killed.push(e);
+        if (e.hp <= 0) {
+          killed.push(e);
+          window.SFX.play('enemyDeath');
+        } else {
+          window.SFX.play('hit');
+        }
       }
     }
 
@@ -81,6 +89,7 @@
         player.invincible = true;
         player.invTimer   = 1;
         applyKnockback(player, e.x, e.y, 100);
+        window.SFX.play('playerHurt');
         return;
       }
     }
@@ -118,6 +127,7 @@
         player.invincible = true;
         player.invTimer   = 1;
         applyKnockback(player, p.x, p.y, 80);
+        window.SFX.play('playerHurt');
         projectiles.splice(i, 1);
       }
     }

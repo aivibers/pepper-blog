@@ -7,7 +7,7 @@
   var R = window.Renderer;
 
   var minimapCanvas, minimapCtx;
-  var hudFloor, hudScore, hudHp;
+  var hudFloor, hudHearts, hudGold, hudKey, hudDamage;
 
   /* Minimap sizing */
   var MAP_SIZE  = 120;  // canvas px
@@ -31,20 +31,53 @@
     minimapCtx = minimapCanvas.getContext('2d');
 
     // Cache HUD DOM refs
-    hudFloor = document.getElementById('hud-floor');
-    hudScore = document.getElementById('hud-score');
-    hudHp    = document.getElementById('hud-hp');
+    hudFloor  = document.getElementById('hud-floor');
+    hudHearts = document.getElementById('hud-hearts');
+    hudGold   = document.getElementById('hud-gold');
+    hudKey    = document.getElementById('hud-key');
+    hudDamage = document.getElementById('hud-damage');
   }
 
   // ── update HUD text ──
 
   function update(gameState) {
     if (!hudFloor) return;
+
+    // Floor
     hudFloor.textContent = 'Floor ' + (gameState.floor || 1);
-    hudScore.textContent = 'Score: ' + (gameState.score || 0);
+
+    // Hearts
     if (gameState.player) {
-      hudHp.textContent = 'HP: ' + gameState.player.hp + '/' + gameState.player.maxHp;
+      var p = gameState.player;
+      var hearts = '';
+      var maxHearts = Math.ceil(p.maxHp / 2);
+      var cur = p.hp;
+      for (var i = 0; i < maxHearts; i++) {
+        if (cur >= 2) {
+          hearts += '❤️';
+          cur -= 2;
+        } else if (cur === 1) {
+          hearts += '💔';
+          cur = 0;
+        } else {
+          hearts += '🖤';
+        }
+      }
+      hudHearts.textContent = hearts;
+
+      // Damage
+      hudDamage.textContent = '⚔️ ' + (p.swordDamage || 2);
+
+      // Key indicator
+      if (p.hasKey) {
+        hudKey.classList.remove('hud-hidden');
+      } else {
+        hudKey.classList.add('hud-hidden');
+      }
     }
+
+    // Gold
+    hudGold.textContent = '🪙 ' + (gameState.gold || 0);
   }
 
   // ── draw minimap ──
@@ -74,9 +107,26 @@
         }
         c.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
+        // Room type icons on visited rooms
+        if (room.visited || (row === cur.row && col === cur.col)) {
+          if (room.type === 'key') {
+            c.fillStyle = R.PALETTE.key;
+            c.font = (CELL_SIZE * 0.5) + 'px monospace';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText('K', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+          } else if (room.type === 'stairs') {
+            c.fillStyle = R.PALETTE.stairs;
+            c.font = (CELL_SIZE * 0.5) + 'px monospace';
+            c.textAlign = 'center';
+            c.textBaseline = 'middle';
+            c.fillText('S', x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+          }
+        }
+
         // Draw door connections as thin lines
-        if (room.visited || row === cur.row && col === cur.col) {
-          c.fillStyle = c.fillStyle; // same color
+        if (room.visited || (row === cur.row && col === cur.col)) {
+          c.fillStyle = R.PALETTE.minimapRoom;
           var mid = CELL_SIZE / 2;
           var lineW = 4;
           if (room.doors.n) {

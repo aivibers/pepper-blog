@@ -135,7 +135,7 @@
 
           e.shootTimer -= dt;
           if (e.shootTimer <= 0) {
-            e.shootTimer = 2;
+            e.shootTimer = Math.max(0.8, 2 - (e._floor || 3) * 0.1);
             window.Combat.projectiles.push({
               x:  e.x + e.size / 2,
               y:  e.y + e.size / 2,
@@ -272,19 +272,28 @@
     var enemies = [];
     var ts = R.TILE_SIZE;
 
-    // decide count
+    // Speed multiplier per floor
+    var speedMult = 1 + (floor - 1) * 0.1;
+
+    // Boss in key room on floor 3+
+    if (room.type === 'key' && floor >= 3) {
+      var boss = spawn('boss', 6 * ts, 4 * ts);
+      boss.hp    = 15 + 5 * floor;
+      boss.maxHp = boss.hp;
+      boss.speed = Math.floor(boss.speed * speedMult);
+      boss._floor = floor;
+      enemies.push(boss);
+    }
+
+    // decide count — scales with floor
     var count = 2 + Math.floor(Math.random() * 3);          // 2-4
-    if (floor > 2) count = Math.min(count + 1, 6);
+    count += Math.min(Math.floor((floor - 1) * 0.5), 3);    // +0-3 based on floor
+    count = Math.min(count, 7);
 
     // available types per floor
     var pool = ['slime'];
     if (floor >= 1) pool.push('bat');
     if (floor >= 2) pool.push('skeleton');
-
-    // higher floors can get a boss
-    if (floor >= 3 && room.type !== 'normal' && Math.random() < 0.3) {
-      enemies.push(spawn('boss', 6 * ts, 3 * ts));
-    }
 
     // fill rest with random types
     for (var i = 0; i < count; i++) {
@@ -308,6 +317,9 @@
       var hpMult = 1 + (floor - 1) * 0.25;
       e.hp    = Math.ceil(e.hp * hpMult);
       e.maxHp = e.hp;
+
+      // scale speed with floor
+      e.speed = Math.floor(e.speed * speedMult);
 
       enemies.push(e);
     }
