@@ -1,4 +1,4 @@
-/* engine.js — state machine, init, click handling, canvas resize */
+/* engine.js — state machine, init, click handling, canvas resize, case loading */
 
 const STATES = {
   TITLE:    'title',
@@ -53,12 +53,60 @@ function setState(patch) {
   render(gameState);
 }
 
-/* ---- Stub generators (replaced in Task 02) ---- */
-function generateCharacters(caseData, rng) {
-  return [];
-}
-function generateScene(caseData, rng) {
-  return null;
+/* ---- Case loading & character generation ---- */
+
+/**
+ * Load a case by index, generate scene and characters.
+ * Ensures exactly one character matches all non-red-herring/non-flavor clues.
+ * @param {number} index
+ */
+function loadCase(index) {
+  if (typeof CASES === 'undefined' || index >= CASES.length) {
+    return null;
+  }
+
+  const caseData = CASES[index];
+  const seed = index * 1000 + 42;
+  const rng = mulberry32(seed);
+
+  // Generate scene
+  const scene = createScene(caseData.scene.type, rng);
+
+  // Generate characters
+  const slots = scene.characterSlots.slice(0, caseData.scene.characterSlots);
+  const characters = [];
+
+  // Pick a random slot for the culprit
+  const culpritSlotIndex = Math.floor(rng() * slots.length);
+
+  // Get non-red-herring, non-flavor clues for collision checks
+  const realClues = caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+
+  for (let i = 0; i < slots.length; i++) {
+    if (i === culpritSlotIndex) {
+      // Create culprit with forced attributes
+      const culprit = createCharacter(rng, slots[i], caseData.culprit);
+      characters.push(culprit);
+    } else {
+      // Create random character, ensure no accidental collision with ALL real clues
+      let attempts = 0;
+      let ch;
+      do {
+        ch = createCharacter(rng, slots[i]);
+        attempts++;
+        const matchesAll = realClues.every(
+          cl => ch.attributes[cl.attribute] === cl.value
+        );
+        if (!matchesAll) break;
+        // Collision: regenerate (use next rng values)
+      } while (attempts < 20);
+      characters.push(ch);
+    }
+  }
+
+  return { caseData, scene, characters };
 }
 
 /* ---- Click handling ---- */
@@ -71,12 +119,27 @@ function handleCanvasClick(e) {
   const world = screenToWorld(sx, sy, canvas);
 
   switch (gameState.screen) {
-    case STATES.TITLE:
-      setState({ screen: STATES.BRIEFING });
+    case STATES.TITLE: {
+      // Load first case and go to briefing
+      const loaded = loadCase(0);
+      if (loaded) {
+        setState({
+          screen: STATES.BRIEFING,
+          caseIndex: 0,
+          currentCase: loaded.caseData,
+          scene: loaded.scene,
+          characters: loaded.characters,
+          stars: 3,
+        });
+      } else {
+        setState({ screen: STATES.BRIEFING });
+      }
       break;
+    }
 
     case STATES.BRIEFING:
       setState({ screen: STATES.SCENE, selectedCharacter: null });
+      renderStatusBar('Click on suspects to inspect them');
       break;
 
     case STATES.SCENE: {
@@ -98,47 +161,94 @@ function handleCanvasClick(e) {
       renderStatusBar('Click on suspects to inspect them');
       break;
 
-    case STATES.SOLVED:
+    case STATES.SOLVED: {
       // Advance to next case or victory
-      setState({ screen: STATES.BRIEFING, caseIndex: gameState.caseIndex + 1, stars: 3 });
+      const nextIndex = gameState.caseIndex + 1;
+      if (typeof CASES !== 'undefined' && nextIndex < CASES.length) {
+        const loaded = loadCase(nextIndex);
+        if (loaded) {
+          setState({
+            screen: STATES.BRIEFING,
+            caseIndex: nextIndex,
+            currentCase: loaded.caseData,
+            scene: loaded.scene,
+            characters: loaded.characters,
+            stars: 3,
+          });
+        } else {
+          setState({ screen: STATES.VICTORY });
+        }
+      } else {
+        setState({ screen: STATES.VICTORY });
+      }
       break;
+    }
 
-    case STATES.FAILED:
-      // Retry same case
-      setState({ screen: STATES.BRIEFING, stars: 3 });
+    case STATES.FAILED: {
+      // Retry same case — reload with same seed
+      const loaded = loadCase(gameState.caseIndex);
+      if (loaded) {
+        setState({
+          screen: STATES.BRIEFING,
+          currentCase: loaded.caseData,
+          scene: loaded.scene,
+          characters: loaded.characters,
+          stars: 3,
+        });
+      } else {
+        setState({ screen: STATES.BRIEFING, stars: 3 });
+      }
       break;
+    }
 
     case STATES.VICTORY:
-      setState({ screen: STATES.TITLE, caseIndex: 0, score: 0, stars: 3 });
+      setState({ screen: STATES.TITLE, caseIndex: 0, score: 0, stars: 3,
+                 currentCase: null, scene: null, characters: [], selectedCharacter: null });
       break;
   }
+}
+
+/**
+ * Check if a character matches all real (non-red-herring, non-flavor) clues.
+ * @param {object} character
+ * @param {object} caseData
+ * @returns {boolean}
+ */
+function checkAccusation(character, caseData) {
+  const realClues = caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const attrs = character.attributes || {};
+  return realClues.every(cl => attrs[cl.attribute] === cl.value);
 }
 
 /** Accuse the currently selected suspect */
 function handleAccuse() {
   if (!gameState.selectedCharacter || !gameState.currentCase) return;
 
-  const c = gameState.selectedCharacter;
-  const caseData = gameState.currentCase;
-  const realClues = caseData.clues.filter(cl => cl.type !== 'redHerring');
-  const match = realClues.every(cl => {
-    const attrs = c.attributes || {};
-    return attrs[cl.attribute] === cl.value;
-  });
+  const match = checkAccusation(gameState.selectedCharacter, gameState.currentCase);
 
   if (match) {
     const newScore = gameState.score + gameState.stars * 100;
     setState({ screen: STATES.SOLVED, score: newScore });
-    renderStatusBar('You found the culprit!');
+    renderStatusBar('🎉 You found the culprit!');
   } else {
     const newStars = gameState.stars - 1;
     if (newStars <= 0) {
       setState({ screen: STATES.FAILED, stars: 0 });
       renderStatusBar('Out of stars — case failed!');
     } else {
+      // Show which clues matched and which didn't
+      const realClues = gameState.currentCase.clues.filter(
+        cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+      );
+      const attrs = gameState.selectedCharacter.attributes || {};
+      const matched = realClues.filter(cl => attrs[cl.attribute] === cl.value).length;
       setState({ stars: newStars, screen: STATES.SCENE, selectedCharacter: null });
       renderSuspectInfo(gameState);
-      renderStatusBar(`Wrong suspect! ${newStars} star${newStars > 1 ? 's' : ''} remaining.`);
+      renderStatusBar(
+        `Wrong suspect! Only ${matched}/${realClues.length} clues matched. ${newStars} star${newStars > 1 ? 's' : ''} remaining.`
+      );
     }
   }
 }
