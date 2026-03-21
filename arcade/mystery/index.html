@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pepper's Mystery 🔍</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="game-container">
+    <div id="hud-bar">
+      <span id="hud-title">PEPPER'S MYSTERY</span>
+      <span id="hud-stars">★★★</span>
+      <span id="hud-case"></span>
+    </div>
+    <div id="main-area">
+      <div id="canvas-wrap">
+        <canvas id="game-canvas"></canvas>
+      </div>
+      <div id="clue-panel">
+        <h2>CLUES</h2>
+        <ul id="clue-list"></ul>
+        <div id="suspect-info"></div>
+      </div>
+    </div>
+    <div id="status-bar">Click on suspects to inspect them</div>
+  </div>
+
+  <script src="js/renderer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/engine.js"></script>
+</body>
+</html>

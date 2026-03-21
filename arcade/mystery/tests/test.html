@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pepper's Mystery — Tests</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+      padding: 2rem;
+    }
+    h1 { color: #f0883e; margin-bottom: 1rem; font-size: 1.5rem; }
+    .summary {
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+    }
+    .summary.pass { background: #1a2e1a; color: #7ee787; border: 1px solid #2d5a2d; }
+    .summary.fail { background: #2e1a1a; color: #f85149; border: 1px solid #5a2d2d; }
+    .test {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid #21262d;
+    }
+    .test.pass { color: #7ee787; }
+    .test.fail { color: #f85149; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Pepper's Mystery — Test Suite</h1>
+  <div id="test-results"></div>
+
+  <!-- Hidden canvas for tests that need it -->
+  <canvas id="game-canvas" style="display:none" width="800" height="500"></canvas>
+
+  <!-- Load game code (same order as game) -->
+  <script src="../js/renderer.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/engine.js"></script>
+
+  <!-- Tests -->
+  <script src="tests.js"></script>
+</body>
+</html>
