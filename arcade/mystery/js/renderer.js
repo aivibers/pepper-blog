@@ -96,14 +96,43 @@ function hitTest(worldX, worldY, entities) {
   return null;
 }
 
-/* ---- Stub: renderScene (replaced in Task 02) ---- */
+/**
+ * Render the full scene: background → furniture → objects → characters (depth-sorted) → foreground.
+ */
 function renderScene(ctx, state) {
-  const { x, y, scale } = worldToScreen(WORLD_W / 2, WORLD_H / 2, ctx.canvas);
-  ctx.fillStyle = PALETTE.textDim;
-  ctx.font = `${Math.round(18 * scale)}px ui-monospace, monospace`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('[ Scene goes here ]', x, y);
+  const scene = state.scene;
+  const { scale } = worldToScreen(0, 0, ctx.canvas);
+
+  if (!scene) {
+    // Fallback placeholder if scene isn't generated yet
+    const center = worldToScreen(WORLD_W / 2, WORLD_H / 2, ctx.canvas);
+    ctx.fillStyle = PALETTE.textDim;
+    ctx.font = `${Math.round(18 * scale)}px ui-monospace, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('[ Scene goes here ]', center.x, center.y);
+    return;
+  }
+
+  // Draw scene layers
+  drawScene(ctx, scene, 'background', scale);
+  drawScene(ctx, scene, 'furniture', scale);
+  drawScene(ctx, scene, 'objects', scale);
+
+  // Draw characters sorted by y-position (lower y draws first; higher y on top)
+  const sorted = state.characters.slice().sort((a, b) => a.y - b.y);
+  for (const ch of sorted) {
+    drawCharacter(ctx, ch, scale);
+    // Highlight selected character
+    if (state.selectedCharacter && state.selectedCharacter.id === ch.id) {
+      drawPixelRect(ctx, ch.x - PIXEL_SIZE, ch.y - PIXEL_SIZE,
+        (ch.width / PIXEL_SIZE) + 2, (ch.height / PIXEL_SIZE) + 2,
+        'rgba(240, 136, 62, 0.35)', scale);
+    }
+  }
+
+  // Foreground layer draws on top of characters
+  drawScene(ctx, scene, 'foreground', scale);
 }
 
 /**

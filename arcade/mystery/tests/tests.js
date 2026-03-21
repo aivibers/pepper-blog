@@ -262,6 +262,159 @@ function testPalette() {
   assert(PALETTE.hair.length >= 5, 'PALETTE has enough hair colors');
 }
 
+/* ========== Test: createCharacter deterministic ========== */
+
+function testCreateCharacterDeterministic() {
+  const rng1 = mulberry32(42);
+  const rng2 = mulberry32(42);
+  const slot = { x: 400, y: 600 };
+
+  const c1 = createCharacter(rng1, slot);
+  const c2 = createCharacter(rng2, slot);
+
+  assertEqual(c1.x, c2.x, 'createCharacter deterministic x');
+  assertEqual(c1.y, c2.y, 'createCharacter deterministic y');
+  assertEqual(c1.width, c2.width, 'createCharacter deterministic width');
+  assertEqual(c1.height, c2.height, 'createCharacter deterministic height');
+  assertEqual(c1.attributes.skinTone, c2.attributes.skinTone, 'createCharacter deterministic skinTone');
+  assertEqual(c1.attributes.hairColor, c2.attributes.hairColor, 'createCharacter deterministic hairColor');
+  assertEqual(c1.attributes.hairStyle, c2.attributes.hairStyle, 'createCharacter deterministic hairStyle');
+  assertEqual(c1.attributes.shirtColor, c2.attributes.shirtColor, 'createCharacter deterministic shirtColor');
+  assertEqual(c1.attributes.hat, c2.attributes.hat, 'createCharacter deterministic hat');
+  assertEqual(c1.attributes.glasses, c2.attributes.glasses, 'createCharacter deterministic glasses');
+  assertEqual(c1.attributes.holdingItem, c2.attributes.holdingItem, 'createCharacter deterministic holdingItem');
+}
+
+/* ========== Test: createCharacter with overrides ========== */
+
+function testCreateCharacterOverrides() {
+  const rng = mulberry32(100);
+  const slot = { x: 500, y: 700 };
+  const overrides = {
+    hat: 'beret',
+    hatColor: '#8B0000',
+    glasses: true,
+    holdingItem: 'tube',
+  };
+
+  const c = createCharacter(rng, slot, overrides);
+
+  assertEqual(c.attributes.hat, 'beret', 'override hat applied');
+  assertEqual(c.attributes.hatColor, '#8B0000', 'override hatColor applied');
+  assertEqual(c.attributes.glasses, true, 'override glasses applied');
+  assertEqual(c.attributes.holdingItem, 'tube', 'override holdingItem applied');
+  // Non-overridden attrs still present
+  assert(typeof c.attributes.skinTone === 'number', 'non-overridden skinTone exists');
+  assert(typeof c.attributes.shirtColor === 'string', 'non-overridden shirtColor exists');
+}
+
+/* ========== Test: createCharacter hat null clears hatColor ========== */
+
+function testCharacterNoHatClearsHatColor() {
+  const rng = mulberry32(55);
+  const slot = { x: 300, y: 500 };
+  const c = createCharacter(rng, slot, { hat: null });
+  assertEqual(c.attributes.hatColor, null, 'null hat clears hatColor');
+}
+
+/* ========== Test: createCharacter bounding box within world ========== */
+
+function testCharacterBoundsInWorld() {
+  const rng = mulberry32(77);
+  const slots = [
+    { x: 50, y: 200 },
+    { x: 800, y: 500 },
+    { x: 1550, y: 950 },
+  ];
+
+  for (const slot of slots) {
+    const c = createCharacter(rng, slot);
+    assert(c.x >= -100 && c.x + c.width <= WORLD_W + 100,
+      `char at slot (${slot.x},${slot.y}) x bounds ok: ${c.x} to ${c.x + c.width}`);
+    assert(c.y >= -100 && c.y + c.height <= WORLD_H + 100,
+      `char at slot (${slot.x},${slot.y}) y bounds ok: ${c.y} to ${c.y + c.height}`);
+  }
+}
+
+/* ========== Test: two characters from same seed + different slots ========== */
+
+function testCharactersDifferentSlots() {
+  const rng = mulberry32(42);
+  const c1 = createCharacter(rng, { x: 100, y: 300 });
+  const c2 = createCharacter(rng, { x: 800, y: 600 });
+
+  assert(c1.x !== c2.x || c1.y !== c2.y,
+    'characters at different slots have different positions');
+}
+
+/* ========== Test: describeCharacter returns a string ========== */
+
+function testDescribeCharacter() {
+  const rng = mulberry32(42);
+  const c = createCharacter(rng, { x: 400, y: 600 });
+  const desc = describeCharacter(c);
+  assert(typeof desc === 'string' && desc.length > 10,
+    'describeCharacter returns a meaningful string');
+  assert(desc.startsWith('A person'),
+    'describeCharacter starts with "A person"');
+}
+
+/* ========== Test: createScene museum ========== */
+
+function testCreateSceneMuseum() {
+  const rng = mulberry32(42);
+  const scene = createScene('museum', rng);
+  assertEqual(scene.name, 'Museum Gallery', 'museum scene name');
+  assertEqual(scene.characterSlots.length, 18, 'museum has 18 character slots');
+  assert(scene.layers.background.length > 0, 'museum has background layer items');
+  assert(scene.layers.furniture.length > 0, 'museum has furniture layer items');
+  assert(Array.isArray(scene.layers.foreground), 'museum has foreground layer array');
+}
+
+/* ========== Test: createScene kitchen ========== */
+
+function testCreateSceneKitchen() {
+  const rng = mulberry32(42);
+  const scene = createScene('kitchen', rng);
+  assertEqual(scene.name, 'Restaurant Kitchen', 'kitchen scene name');
+  assertEqual(scene.characterSlots.length, 16, 'kitchen has 16 character slots');
+  assert(scene.layers.background.length > 0, 'kitchen has background layer items');
+  assert(scene.layers.furniture.length > 0, 'kitchen has furniture layer items');
+}
+
+/* ========== Test: createScene library ========== */
+
+function testCreateSceneLibrary() {
+  const rng = mulberry32(42);
+  const scene = createScene('library', rng);
+  assertEqual(scene.name, 'Reading Room', 'library scene name');
+  assertEqual(scene.characterSlots.length, 18, 'library has 18 character slots');
+  assert(scene.layers.background.length > 0, 'library has background layer items');
+  assert(scene.layers.furniture.length > 0, 'library has furniture layer items');
+}
+
+/* ========== Test: createScene deterministic ========== */
+
+function testCreateSceneDeterministic() {
+  const s1 = createScene('museum', mulberry32(42));
+  const s2 = createScene('museum', mulberry32(42));
+
+  assertEqual(s1.characterSlots.length, s2.characterSlots.length,
+    'museum deterministic slot count');
+  assertEqual(s1.characterSlots[0].x, s2.characterSlots[0].x,
+    'museum deterministic first slot x');
+  assertEqual(s1.characterSlots[0].y, s2.characterSlots[0].y,
+    'museum deterministic first slot y');
+}
+
+/* ========== Test: createScene unknown type defaults to museum ========== */
+
+function testCreateSceneUnknownType() {
+  const rng = mulberry32(42);
+  const scene = createScene('unknown_type', rng);
+  assertEqual(scene.name, 'Museum Gallery', 'unknown type defaults to museum');
+}
+
 /* ========== Run all tests ========== */
 
 function runAllTests() {
@@ -272,6 +425,19 @@ function runAllTests() {
   testStateTransitions();
   testTransitionTableComplete();
   testPalette();
+
+  // Task 02 tests
+  testCreateCharacterDeterministic();
+  testCreateCharacterOverrides();
+  testCharacterNoHatClearsHatColor();
+  testCharacterBoundsInWorld();
+  testCharactersDifferentSlots();
+  testDescribeCharacter();
+  testCreateSceneMuseum();
+  testCreateSceneKitchen();
+  testCreateSceneLibrary();
+  testCreateSceneDeterministic();
+  testCreateSceneUnknownType();
 
   // Display results
   const container = document.getElementById('test-results');
