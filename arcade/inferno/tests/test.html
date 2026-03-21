@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pepper's Inferno — Tests</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a0a2e;
+      color: #fff;
+      padding: 2rem;
+    }
+    h1 { color: #ff4444; margin-bottom: 1rem; }
+    h2 { margin-bottom: 1rem; }
+    .pass { color: #44ff44; padding: 2px 0; }
+    .fail { color: #ff4444; padding: 2px 0; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Pepper's Inferno — Test Suite</h1>
+  <div id="results">Running tests...</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="tests.js"></script>
+</body>
+</html>

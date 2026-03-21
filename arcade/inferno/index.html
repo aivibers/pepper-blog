@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pepper's Inferno</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <div id="hud-overlay">
+    <div id="crosshair"></div>
+    <div id="hud-health">
+      <span class="hud-label">HP</span>
+      <span id="hud-health-value">100</span>
+    </div>
+    <div id="hud-ammo">
+      <span class="hud-label">AMMO</span>
+      <span id="hud-ammo-value">∞</span>
+    </div>
+    <div id="hud-weapon">
+      <span id="hud-weapon-name">SPLAT PISTOL</span>
+    </div>
+  </div>
+
+  <div id="title-screen">
+    <h1>PEPPER'S INFERNO</h1>
+    <p class="subtitle">A paint-splattered descent into chaos</p>
+    <p class="prompt">Click to Start</p>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="js/engine.js"></script>
+</body>
+</html>
