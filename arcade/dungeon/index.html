@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pepper's Dungeon</title>
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas" width="672" height="576"></canvas>
+
+    <div id="title-overlay">
+      <h1>PEPPER'S DUNGEON</h1>
+      <p class="subtitle">A Roguelike Adventure</p>
+      <p class="prompt">Press ENTER to Begin</p>
+    </div>
+
+    <div id="hud-bar">
+      <span id="hud-floor">Floor 1</span>
+      <span id="hud-score">Score: 0</span>
+      <span id="hud-hp">HP: 10/10</span>
+    </div>
+  </div>
+
+  <script src="js/renderer.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/engine.js"></script>
+</body>
+</html>
