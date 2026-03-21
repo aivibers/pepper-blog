@@ -215,6 +215,29 @@ body {
   flex-shrink: 0;
 }
 
+/* === Transition overlay === */
+#transition-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0d1117;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+#transition-overlay.fade-in {
+  opacity: 1;
+}
+
+/* === Character highlight glow === */
+#game-canvas {
+  transition: filter 0.15s ease;
+}
+
 /* === Mobile: stack vertically === */
 @media (max-width: 768px) {
   #main-area {

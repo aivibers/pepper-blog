@@ -130,6 +130,7 @@ function handleCanvasClick(e) {
           scene: loaded.scene,
           characters: loaded.characters,
           stars: 3,
+          score: 0,
         });
       } else {
         setState({ screen: STATES.BRIEFING });
@@ -185,7 +186,7 @@ function handleCanvasClick(e) {
     }
 
     case STATES.FAILED: {
-      // Retry same case — reload with same seed
+      // Retry same case — reload with same seed, keep cumulative score
       const loaded = loadCase(gameState.caseIndex);
       if (loaded) {
         setState({
@@ -202,8 +203,18 @@ function handleCanvasClick(e) {
     }
 
     case STATES.VICTORY:
-      setState({ screen: STATES.TITLE, caseIndex: 0, score: 0, stars: 3,
-                 currentCase: null, scene: null, characters: [], selectedCharacter: null });
+      // Full reset — replay from beginning
+      setState({
+        screen: STATES.TITLE,
+        caseIndex: 0,
+        score: 0,
+        stars: 3,
+        currentCase: null,
+        scene: null,
+        characters: [],
+        selectedCharacter: null,
+        cluesRevealed: [],
+      });
       break;
   }
 }
@@ -251,6 +262,16 @@ function handleAccuse() {
       );
     }
   }
+}
+
+/**
+ * Calculate the total score for a given number of stars on the current case.
+ * Each case: stars_remaining × 100
+ * @param {number} stars
+ * @returns {number}
+ */
+function calculateCaseScore(stars) {
+  return stars * 100;
 }
 
 /* ---- Canvas resize ---- */

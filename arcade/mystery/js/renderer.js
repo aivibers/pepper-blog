@@ -175,7 +175,7 @@ function render(state) {
       renderFailed(ctx, state);
       break;
     case STATES.VICTORY:
-      renderTitle(ctx, state); // reuse title for now
+      renderVictory(ctx, state);
       break;
   }
 
