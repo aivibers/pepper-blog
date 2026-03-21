@@ -5,22 +5,35 @@
 import * as THREE from 'three';
 import { generateLevel } from './level.js';
 import { createPlayer } from './player.js';
-import { initHUD, showHUD, updateHUD } from './hud.js';
+import { initHUD, showHUD, hideHUD, updateHUD } from './hud.js';
 import { WEAPONS, fireWeapon } from './weapons.js';
 import { spawnEnemy, updateEnemies, damageEnemy, removeEnemy } from './enemies.js';
 import { createSplatter, createDeathBurst, updateParticles } from './particles.js';
 import { createPickup, updatePickups, checkPickupCollision, cleanupPickups } from './pickups.js';
-import { progression, getEnemyCount, getEnemyTypes, addScore, addKill, nextLevel } from './game.js';
+import { progression, getEnemyCount, getEnemyTypes, addScore, addKill, nextLevel, resetProgression } from './game.js';
+import { playSound } from './audio.js';
 
 // ── Game state ──
 const gameState = {
-  screen: 'title', // title | playing
+  screen: 'title', // title | playing | dead
   enemies: [],
   projectiles: [],
   particles: [],
   pickups: [],
   damageFlash: 0,
   doorUnlocked: false,
+};
+
+// ── Screen shake state ──
+const shake = {
+  active: false,
+  timer: 0,
+  intensity: 0,
+};
+
+// ── Weapon bob state ──
+const weaponBob = {
+  time: 0,
 };
 
 // ── Three.js setup ──
@@ -61,6 +74,7 @@ document.body.appendChild(damageOverlay);
 
 // ── Level transition overlay ──
 const levelOverlay = document.createElement('div');
+levelOverlay.id = 'level-transition-overlay';
 levelOverlay.style.cssText = `
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0); pointer-events: none; z-index: 998;
@@ -70,6 +84,25 @@ levelOverlay.style.cssText = `
   opacity: 0; transition: opacity 0.3s;
 `;
 document.body.appendChild(levelOverlay);
+
+// ── Level flash overlay (white flash on level transition) ──
+const levelFlash = document.createElement('div');
+levelFlash.className = 'level-flash';
+document.body.appendChild(levelFlash);
+
+// ── Death screen overlay ──
+const deathScreen = document.createElement('div');
+deathScreen.id = 'death-screen';
+deathScreen.innerHTML = `
+  <div class="death-title">YOU DIED</div>
+  <div class="death-stats">
+    <div class="death-stat">SCORE: <span id="death-score">0</span></div>
+    <div class="death-stat">KILLS: <span id="death-kills">0</span></div>
+    <div class="death-stat">LEVEL: <span id="death-level">1</span></div>
+  </div>
+  <div class="death-prompt">Click to Restart</div>
+`;
+document.body.appendChild(deathScreen);
 
 // ── Title screen ──
 const titleScreen = document.getElementById('title-screen');
@@ -81,6 +114,18 @@ renderer.domElement.addEventListener('click', () => {
     showHUD();
     player.requestLock();
     startLevel(progression.level);
+  } else if (gameState.screen === 'dead') {
+    // Restart game
+    deathScreen.classList.remove('active');
+    resetProgression();
+    player.state.health = 100;
+    player.state.ammo.paintCannon = 20;
+    player.state.ammo.gooLauncher = 5;
+    player.state.weapon = 0;
+    gameState.screen = 'playing';
+    showHUD();
+    player.requestLock();
+    startLevel(1);
   } else if (!player.pointerLocked) {
     player.requestLock();
   }
@@ -184,6 +229,10 @@ function startLevel(levelNum) {
 function advanceLevel() {
   nextLevel();
 
+  // Trigger white level flash
+  levelFlash.classList.add('active');
+  setTimeout(() => levelFlash.classList.remove('active'), 400);
+
   // Show level transition text
   levelOverlay.textContent = `LEVEL ${progression.level}`;
   levelOverlay.style.opacity = '1';
@@ -199,12 +248,38 @@ function advanceLevel() {
 }
 
 /**
+ * Show the death screen.
+ */
+function showDeathScreen() {
+  gameState.screen = 'dead';
+  hideHUD();
+  document.exitPointerLock();
+
+  document.getElementById('death-score').textContent = progression.score;
+  document.getElementById('death-kills').textContent = progression.kills;
+  document.getElementById('death-level').textContent = progression.level;
+
+  deathScreen.classList.add('active');
+}
+
+/**
+ * Trigger screen shake.
+ * @param {number} intensity — max pixel offset
+ * @param {number} duration — seconds
+ */
+function triggerShake(intensity, duration) {
+  shake.active = true;
+  shake.timer = duration;
+  shake.intensity = intensity;
+}
+
+/**
  * Try to fire the current weapon.
  */
 function tryFire() {
   if (gameState.screen !== 'playing' || !player.pointerLocked || !level) return;
 
-  fireWeapon(
+  const fired = fireWeapon(
     scene,
     camera,
     player.state,
@@ -213,6 +288,13 @@ function tryFire() {
     level.walls,
     onWeaponHit
   );
+
+  if (fired) {
+    // Play weapon fire sound
+    const weaponIndex = player.state.weapon;
+    const soundMap = ['pistol', 'cannon', 'launcher'];
+    playSound(soundMap[weaponIndex]);
+  }
 }
 
 /**
@@ -229,6 +311,8 @@ function onWeaponHit(enemy, damage, point, normal) {
     const killed = damageEnemy(enemy, damage);
     gameState.particles.push(createSplatter(scene, point, normal, enemy.color));
 
+    playSound('enemyHit');
+
     if (killed) {
       onEnemyDeath(enemy);
     }
@@ -242,6 +326,8 @@ function onWeaponHit(enemy, damage, point, normal) {
  */
 function onEnemyDeath(enemy) {
   const pos = enemy.mesh.position.clone();
+
+  playSound('enemyDeath');
 
   // Death burst particles
   const burstParticles = createDeathBurst(scene, pos, enemy.color);
@@ -269,6 +355,9 @@ window.addEventListener('resize', () => {
 
 // ── Gravity constant for projectile arcing ──
 const PROJECTILE_GRAVITY = -9.8;
+
+// Track previous health for damage detection
+let prevHealth = 100;
 
 // ── Game loop ──
 let lastTime = 0;
@@ -299,6 +388,14 @@ function gameLoop(time) {
     if (enemyResult.playerDamage > 0) {
       player.state.health -= enemyResult.playerDamage;
       gameState.damageFlash = 0.3;
+      playSound('playerHurt');
+      triggerShake(0.15, 0.2);
+    }
+
+    // ── Check for death ──
+    if (player.state.health <= 0) {
+      player.state.health = 0;
+      showDeathScreen();
     }
 
     // ── Damage flash ──
@@ -310,6 +407,14 @@ function gameLoop(time) {
       damageOverlay.style.background = 'rgba(255, 0, 0, 0)';
     }
 
+    // ── Screen shake ──
+    if (shake.active) {
+      shake.timer -= dt;
+      if (shake.timer <= 0) {
+        shake.active = false;
+      }
+    }
+
     // ── Update projectiles ──
     updateProjectiles(dt);
 
@@ -318,12 +423,16 @@ function gameLoop(time) {
 
     // ── Update pickups ──
     updatePickups(gameState.pickups, dt);
-    checkPickupCollision(gameState.pickups, player.position, player.state);
+    const collected = checkPickupCollision(gameState.pickups, player.position, player.state);
+    if (collected.length > 0) {
+      playSound('pickup');
+    }
 
     // ── Check if all enemies dead → unlock door ──
     const allDead = gameState.enemies.every(e => !e.alive);
     if (allDead && !gameState.doorUnlocked && level.door) {
       gameState.doorUnlocked = true;
+      playSound('doorUnlock');
       // Change door from golden to green (unlocked)
       level.door.material.color.setHex(0x44ff44);
       level.door.material.emissive.setHex(0x44ff44);
@@ -344,8 +453,38 @@ function gameLoop(time) {
       player.state.health = Math.min(100, player.state.health + dt);
     }
 
+    // ── Weapon bob (sine wave on camera Y while moving) ──
+    weaponBob.time += dt * 10;
+    const bobAmplitude = 0.03;
+    const bobOffset = Math.sin(weaponBob.time) * bobAmplitude;
+
+    // Apply camera position from player (already set by player.update)
+    // Then add bob + shake offsets
+    let cameraOffsetY = bobOffset;
+    let cameraOffsetX = 0;
+
+    // ── Screen shake offset ──
+    if (shake.active) {
+      const decay = shake.timer / 0.2; // 0.2s duration
+      cameraOffsetX = (Math.random() - 0.5) * shake.intensity * decay;
+      cameraOffsetY += (Math.random() - 0.5) * shake.intensity * decay;
+    }
+
+    camera.position.x += cameraOffsetX;
+    camera.position.y += cameraOffsetY;
+
+    // Track health for damage detection in projectiles
+    prevHealth = player.state.health;
+
     // ── Update HUD ──
-    updateHUD(player.state, { score: progression.score, level: progression.level });
+    updateHUD(player.state, {
+      score: progression.score,
+      level: progression.level,
+      kills: progression.kills,
+      enemies: gameState.enemies,
+      walls: level ? level.walls : [],
+      playerPos: player.position,
+    });
   }
 
   renderer.render(scene, camera);
@@ -387,10 +526,18 @@ function updateProjectiles(dt) {
       if (distToPlayer < 0.6) {
         player.state.health -= proj.damage;
         gameState.damageFlash = 0.3;
+        playSound('playerHurt');
+        triggerShake(0.15, 0.2);
         proj.alive = false;
 
         const normal = new THREE.Vector3(0, 1, 0);
         gameState.particles.push(createSplatter(scene, projPos.clone(), normal, proj.weapon.color));
+
+        // Check death from projectile
+        if (player.state.health <= 0) {
+          player.state.health = 0;
+          showDeathScreen();
+        }
         continue;
       }
     } else {
@@ -402,6 +549,8 @@ function updateProjectiles(dt) {
           const killed = damageEnemy(enemy, proj.weapon.damage);
           const hitNormal = projPos.clone().sub(enemy.mesh.position).normalize();
           gameState.particles.push(createSplatter(scene, projPos.clone(), hitNormal, proj.weapon.color));
+
+          playSound('enemyHit');
 
           if (killed) {
             onEnemyDeath(enemy);

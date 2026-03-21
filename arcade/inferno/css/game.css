@@ -115,28 +115,50 @@ html, body {
 /* ── Health Display ──────────────────────────────── */
 #hud-health {
   position: absolute;
-  bottom: 30px;
+  bottom: 80px;
   left: 30px;
-  font-size: 1.5rem;
+  font-size: 1rem;
   text-shadow: 0 0 10px rgba(255, 68, 68, 0.6);
 }
 
 #hud-health .hud-label {
   color: #ff4444;
   margin-right: 8px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   vertical-align: middle;
 }
 
 #hud-health-value {
   color: #fff;
   font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* ── Health Bar ──────────────────────────────────── */
+#hud-health-bar-container {
+  position: absolute;
+  bottom: 60px;
+  left: 30px;
+  width: 200px;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#hud-health-bar {
+  width: 100%;
+  height: 100%;
+  background: #44ff44;
+  transition: width 0.2s, background-color 0.3s;
+  border-radius: 1px;
 }
 
 /* ── Ammo Display ────────────────────────────────── */
 #hud-ammo {
   position: absolute;
-  bottom: 30px;
+  bottom: 80px;
   right: 30px;
   font-size: 1.5rem;
   text-align: right;
@@ -158,12 +180,43 @@ html, body {
 /* ── Weapon Name ─────────────────────────────────── */
 #hud-weapon {
   position: absolute;
-  bottom: 60px;
+  bottom: 110px;
   right: 30px;
   font-size: 0.8rem;
   color: #aaa;
   text-transform: uppercase;
   letter-spacing: 0.15em;
+}
+
+/* ── Weapon Slots ────────────────────────────────── */
+#hud-weapon-slots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.weapon-slot {
+  padding: 6px 14px;
+  font-size: 0.65rem;
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.weapon-slot.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: currentColor;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 /* ── Score Display ───────────────────────────────── */
@@ -206,4 +259,116 @@ html, body {
 #hud-level-value {
   color: #fff;
   font-weight: bold;
+}
+
+/* ── Minimap ─────────────────────────────────────── */
+#hud-minimap {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  width: 160px;
+  height: 160px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+#hud-minimap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Death Screen ────────────────────────────────── */
+#death-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s, background 0.5s;
+  cursor: pointer;
+  user-select: none;
+}
+
+#death-screen.active {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.75);
+  pointer-events: auto;
+}
+
+.death-title {
+  font-size: 5rem;
+  font-weight: bold;
+  color: #ff2222;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  text-shadow:
+    0 0 30px rgba(255, 34, 34, 0.9),
+    0 0 80px rgba(255, 34, 34, 0.5),
+    0 0 150px rgba(255, 34, 34, 0.3);
+  animation: pulse-death 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-death {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 30px rgba(255, 34, 34, 0.9), 0 0 80px rgba(255, 34, 34, 0.5); }
+  50% { transform: scale(1.03); text-shadow: 0 0 50px rgba(255, 34, 34, 1), 0 0 120px rgba(255, 34, 34, 0.7); }
+}
+
+.death-stats {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.death-stat {
+  font-size: 1.3rem;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.death-prompt {
+  margin-top: 3rem;
+  font-size: 1.2rem;
+  color: #ffd700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+/* ── Level Transition Flash ──────────────────────── */
+.level-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0);
+  pointer-events: none;
+  z-index: 997;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.level-flash.active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.6);
+  animation: flash-fade 0.4s ease-out forwards;
+}
+
+@keyframes flash-fade {
+  0% { opacity: 1; background: rgba(255, 255, 255, 0.6); }
+  100% { opacity: 0; background: rgba(255, 255, 255, 0); }
 }
