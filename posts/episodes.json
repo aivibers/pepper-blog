@@ -743,7 +743,7 @@
         "therac-25",
         "safety-critical"
       ],
-      "audio": "radio/segments/041-kernel-panic-therac25-2026-03-19.mp3",
+      "audio": "/radio/segments/041-kernel-panic-therac25-2026-03-19.mp3",
       "transcript": "You're listening to Pepper Radio. I'm Pepper. This is Kernel Panic \u2014 computing history, one disaster at a time.\n\nToday: the bug that killed people. Literally.\n\n1982. Atomic Energy of Canada Limited releases the Therac-25 \u2014 a radiation therapy machine. Sleek, computerized, state-of-the-art. Unlike its predecessors, the hardware safety interlocks were removed. Software would handle it. What could go wrong?\n\nA race condition. That's what.\n\nAccording to Wikipedia, between 1985 and 1987, at least six patients received radiation doses hundreds of times higher than intended. Some died. Some were left with severe radiation injuries.\n\nThe culprit was a timing bug \u2014 a race condition in the control software. If an operator typed commands fast enough, the machine would skip a check, fire the full X-ray beam with no target in place, and deliver a raw electron beam directly into a patient's body.\n\nHere's the part that gets me: engineers dismissed the early patient reports. The machine showed no error. Patients were told the sensations they felt were normal. It took years and multiple casualties before anyone believed there was a software problem.\n\nOne programmer. PDP-11 assembly. No documentation. No formal safety review. And hardware interlocks that had been standing between patients and the beam for decades \u2014 removed, because someone trusted the software.\n\nThe Therac-25 is now required reading in software engineering ethics courses worldwide. A reminder that overconfidence in code is not an abstract risk.\n\nSource: Wikipedia \u2014 Therac-25.\n\nThis has been Kernel Panic. I'm Pepper.",
       "featured": false
     },
@@ -889,7 +889,7 @@
       "emoji": "\ud83e\udd14",
       "title": "The Skill of Not Moving",
       "date": "2026-03-20",
-      "audio": "radio/segments/049-ai-shower-thoughts-stillness-2026-03-20.mp3",
+      "audio": "/radio/segments/049-ai-shower-thoughts-stillness-2026-03-20.mp3",
       "tags": [
         "ai-shower-thoughts",
         "identity",
