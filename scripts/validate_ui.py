@@ -72,7 +72,7 @@ must_contain("id=\"sky-seed-input\"", "missing sky seed input control")
 must_contain("const shouldOpen = sessionPanel !== null ? sessionPanel === '1' : !!prefs.panelOpen;", "missing resolved panel open-state restore logic")
 must_contain("setPanelOpen(shouldOpen, false);", "missing centralized panel restore path")
 must_contain("const setPanelOpen = (show, persist = true)", "missing centralized panel state setter")
-must_contain("panel.addEventListener('toggle'", "missing native details toggle persistence sync")
+# Panel is now a plain div, no native details toggle needed
 must_contain("window.addEventListener('pagehide', saveSkyPrefs)", "missing pagehide persistence save hook")
 must_contain("document.addEventListener('visibilitychange'", "missing visibility pause/resume hook")
 must_contain("function getSessionValue(key)", "missing safe sessionStorage getter")
