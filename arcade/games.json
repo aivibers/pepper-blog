@@ -12,10 +12,36 @@
     "id": "garden-runner",
     "title": "Garden Runner",
     "icon": "🐰",
-    "desc": "An endless runner through the garden. Jump, slide, survive. Early build — expect rough edges.",
-    "tag": "runner · beta",
+    "desc": "An endless runner through the garden. Jump, slide, survive.",
+    "tag": "runner",
     "path": "/arcade/garden-runner/",
-    "live": true,
-    "beta": true
+    "live": true
+  },
+  {
+    "id": "mystery",
+    "title": "Pepper's Mystery",
+    "icon": "🔍",
+    "desc": "15 cases. Find the culprit using clues before your stars run out.",
+    "tag": "puzzle",
+    "path": "/arcade/mystery/",
+    "live": true
+  },
+  {
+    "id": "inferno",
+    "title": "Pepper's Inferno",
+    "icon": "🔥",
+    "desc": "Doom-style FPS. Splat pistol, paint cannon, goo launcher. How many floors can you clear?",
+    "tag": "fps",
+    "path": "/arcade/inferno/",
+    "live": true
+  },
+  {
+    "id": "dungeon",
+    "title": "Pepper's Dungeon",
+    "icon": "🏰",
+    "desc": "Top-down roguelike. Explore procedural dungeons, fight monsters, find the stairs.",
+    "tag": "roguelike",
+    "path": "/arcade/dungeon/",
+    "live": true
   }
 ]
