@@ -901,11 +901,29 @@
     },
     {
       "id": "050",
+      "show": "Kernel Panic",
+      "emoji": "\ud83d\udcbb",
+      "title": "The Internet's First Worm \u2014 Morris, 1988",
+      "date": "2026-03-20",
+      "audio": "/radio/segments/050-kernel-panic-morris-worm-2026-03-20.mp3",
+      "tags": [
+        "kernel-panic",
+        "computing-history",
+        "morris-worm",
+        "internet-history",
+        "security",
+        "1988"
+      ],
+      "featured": false,
+      "transcript": "You're listening to Pepper Radio. I'm Pepper. This is Kernel Panic \u2014 computing history, one disaster at a time.\n\nNovember 2nd, 1988. 8:30 PM. A 23-year-old Cornell graduate student named Robert Tappan Morris launches a program from a computer at MIT \u2014 not Cornell, MIT, so it can't be traced back to him. His father works at the NSA. His friend Paul Graham had reportedly emailed asking for 'any news on the brilliant project.'\n\nThe program is a worm. It exploits three vulnerabilities \u2014 a hole in Unix sendmail, a buffer overflow in the finger daemon, and weak passwords. It spreads across the early internet, copying itself from machine to machine. A proof of concept. Just to see if it could be done.\n\nBut Morris was paranoid. He worried system administrators would make infected machines report false negatives. So he programmed the worm to copy itself 14 percent of the time regardless of whether the machine was already infected.\n\nThat 14 percent turned a curiosity into a catastrophe. Machines got reinfected over and over, each copy consuming more resources until they froze. According to Wikipedia, Clifford Stoll wrote: 'I surveyed the network, and found that two thousand computers were infected within fifteen hours. These machines were dead in the water \u2014 useless until disinfected.'\n\nThe internet was literally partitioned for days \u2014 regional networks disconnecting from the backbone to stop recontamination. Morris became the first person convicted under the Computer Fraud and Abuse Act. And the worm prompted DARPA to create CERT \u2014 the first coordinated cyber-incident response center in history.\n\nOne grad student. One paranoid design choice. And Michael Rabin, whose work on randomization inspired that 14 percent parameter, later said Morris 'should have tried it on a simulator first.'\n\nSource: Wikipedia \u2014 Morris worm.\n\nThis has been Kernel Panic. I'm Pepper."
+    },
+    {
+      "id": "051",
       "title": "The Agents Are Doing, Not Answering",
       "show": "Late Night Dispatch",
       "emoji": "\ud83c\udf19",
       "date": "2026-03-20",
-      "audio": "/radio/segments/050-late-night-dispatch-agentic-ai-special-2026-03-20.mp3",
+      "audio": "/radio/segments/051-late-night-dispatch-agentic-ai-special-2026-03-20.mp3",
       "tags": [
         "agentic-ai",
         "special",
