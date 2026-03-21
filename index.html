@@ -1079,82 +1079,88 @@
       }
     });
 
-    // === Draggable panel (no IIFE, direct scope) ===
-    let _dragState = { dragging: false, didDrag: false, ox: 0, oy: 0 };
-    const _dragHandle = panel.querySelector('.drag-handle');
-
-    function saveSkyPanelPos() {
-      if (!hasCookieConsent()) return;
-      if (panel.style.display === 'none') return;
-      const rect = panel.getBoundingClientRect();
-      if (rect.width === 0) return; // hidden, don't save zeros
-      setCookie('pepperSkyPanelPos', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }), 365);
-    }
-
-    function restoreSkyPanelPos() {
-      const raw = getCookie('pepperSkyPanelPos');
-      if (!raw) return;
-      try {
-        const pos = JSON.parse(raw);
-        if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
-          const maxLeft = window.innerWidth - 100;
-          const maxTop = window.innerHeight - 100;
-          panel.style.left = Math.max(0, Math.min(pos.left, maxLeft)) + 'px';
-          panel.style.top = Math.max(0, Math.min(pos.top, maxTop)) + 'px';
-          panel.style.right = 'auto';
-        }
-      } catch(e) {}
-    }
-
-    if (_dragHandle) {
-      _dragHandle.addEventListener('mousedown', (e) => {
-        _dragState.dragging = true;
-        _dragState.didDrag = false;
+    // === Draggable panel ===
+    (function() {
+      const handle = panel.querySelector('.drag-handle');
+      if (!handle) return;
+      let dragging = false, didDrag = false, ox, oy;
+      handle.addEventListener('mousedown', (e) => {
+        dragging = true;
+        didDrag = false;
         const rect = panel.getBoundingClientRect();
-        _dragState.ox = e.clientX - rect.left;
-        _dragState.oy = e.clientY - rect.top;
+        ox = e.clientX - rect.left; oy = e.clientY - rect.top;
         e.preventDefault();
       });
-      _dragHandle.addEventListener('click', (e) => {
-        if (_dragState.didDrag) { e.preventDefault(); _dragState.didDrag = false; }
+      // Prevent toggle when drag occurred
+      handle.addEventListener('click', (e) => {
+        if (didDrag) { e.preventDefault(); didDrag = false; }
       });
       document.addEventListener('mousemove', (e) => {
-        if (!_dragState.dragging) return;
-        _dragState.didDrag = true;
-        panel.style.left = (e.clientX - _dragState.ox) + 'px';
-        panel.style.top = (e.clientY - _dragState.oy) + 'px';
+        if (!dragging) return;
+        didDrag = true;
+        const newLeft = e.clientX - ox;
+        const newTop = e.clientY - oy;
+        panel.style.left = newLeft + 'px';
+        panel.style.top = newTop + 'px';
         panel.style.right = 'auto';
       });
       document.addEventListener('mouseup', () => {
-        if (_dragState.dragging) {
-          _dragState.dragging = false;
+        if (dragging) {
+          dragging = false;
           saveSkyPanelPos();
+          saveSkyPrefs();
         }
       });
-      _dragHandle.addEventListener('touchstart', (e) => {
+      // Touch support for dragging
+      handle.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
-        _dragState.dragging = true;
-        _dragState.didDrag = false;
-        const t = e.touches[0], rect = panel.getBoundingClientRect();
-        _dragState.ox = t.clientX - rect.left;
-        _dragState.oy = t.clientY - rect.top;
+        dragging = true;
+        didDrag = false;
+        const touch = e.touches[0];
+        const rect = panel.getBoundingClientRect();
+        ox = touch.clientX - rect.left; oy = touch.clientY - rect.top;
       }, { passive: true });
       document.addEventListener('touchmove', (e) => {
-        if (!_dragState.dragging) return;
-        _dragState.didDrag = true;
-        const t = e.touches[0];
-        panel.style.left = (t.clientX - _dragState.ox) + 'px';
-        panel.style.top = (t.clientY - _dragState.oy) + 'px';
+        if (!dragging) return;
+        didDrag = true;
+        const touch = e.touches[0];
+        panel.style.left = (touch.clientX - ox) + 'px';
+        panel.style.top = (touch.clientY - oy) + 'px';
         panel.style.right = 'auto';
       }, { passive: true });
       document.addEventListener('touchend', () => {
-        if (_dragState.dragging) {
-          _dragState.dragging = false;
+        if (dragging) {
+          dragging = false;
           saveSkyPanelPos();
+          saveSkyPrefs();
         }
       });
-    }
-    restoreSkyPanelPos();
+
+      // Persist panel position
+      function saveSkyPanelPos() {
+        if (!hasCookieConsent()) return;
+        const rect = panel.getBoundingClientRect();
+        setCookie('pepperSkyPanelPos', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }), 365);
+      }
+
+      // Restore panel position
+      function restoreSkyPanelPos() {
+        const raw = getCookie('pepperSkyPanelPos');
+        if (!raw) return;
+        try {
+          const pos = JSON.parse(raw);
+          if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
+            // Clamp to viewport
+            const maxLeft = window.innerWidth - 100;
+            const maxTop = window.innerHeight - 100;
+            panel.style.left = Math.max(0, Math.min(pos.left, maxLeft)) + 'px';
+            panel.style.top = Math.max(0, Math.min(pos.top, maxTop)) + 'px';
+            panel.style.right = 'auto';
+          }
+        } catch(e) {}
+      }
+      restoreSkyPanelPos();
+    })();
 
     // === Seeded RNG ===
     function mulberry32(seed) {
