@@ -369,9 +369,6 @@
       position: fixed;
       right: 14px;
       top: 200px;
-    }
-    .sky-controls.revealed {
-      display: block;
       background: rgba(22, 27, 34, 0.92);
       backdrop-filter: blur(10px);
       border: 1px solid #30363d;
@@ -841,9 +838,14 @@
     });
 
     // === Centralized panel state setter ===
+    let panelVisible = false;
+
     const setPanelOpen = (show, persist = true) => {
+      panelVisible = show;
       panel.classList.toggle('show', show);
-      panel.open = show;
+      // Keep <details> always open so content is accessible; hide via CSS
+      panel.open = true;
+      panel.style.display = show ? '' : 'none';
       starsPowerBtn.style.opacity = show ? '1' : '';
       if (persist && hasCookieConsent()) {
         setSessionValue('pepperSkyPanelOpen', show ? '1' : '0');
@@ -851,14 +853,10 @@
       }
     };
 
-    // Native details toggle persistence sync
-    panel.addEventListener('toggle', () => {
-      const isOpen = panel.open;
-      panel.classList.toggle('show', isOpen);
-      if (hasCookieConsent()) {
-        setSessionValue('pepperSkyPanelOpen', isOpen ? '1' : '0');
-        saveSkyPrefs();
-      }
+    // Prevent native <details> toggle from collapsing the panel
+    panel.addEventListener('toggle', (e) => {
+      // Always keep open; we control visibility via display
+      if (!panel.open) panel.open = true;
     });
 
     // === Star toggle (✦) — toggles stars on/off ===
@@ -866,9 +864,9 @@
       toggleStars();
     });
 
-    // === Star power button — opens sky controls panel ===
+    // === Star power button — toggles sky controls panel ===
     starsPowerBtn.addEventListener('click', () => {
-      setPanelOpen(!panel.open);
+      setPanelOpen(!panelVisible);
     });
 
     function applyStarsDomState() {
@@ -913,7 +911,7 @@
           const btn = starsPowerBtn;
           btn.classList.add('unlocked');
           btn.classList.add('revealed');
-          panel.classList.add('revealed');
+          setPanelOpen(true);
           if (window.__konamiCount >= 3) {
             window.__konamiPinned = true;
           }
@@ -934,7 +932,7 @@
         trail: parseInt(skyControlEls.trail.value),
         count: parseInt(skyControlEls.count.value),
         skySeed: skyControlEls.skySeed.value,
-        panelOpen: panel.open || false,
+        panelOpen: panelVisible || false,
         starsOn: starsOn,
         powerRevealed: starsPowerBtn.classList.contains('revealed')
       };
@@ -971,12 +969,11 @@
       }
       if (prefs.powerRevealed) {
         starsPowerBtn.classList.add('revealed');
-        panel.classList.add('revealed');
+        // Restore panel state from session or prefs
+        const sessionPanel = getSessionValue('pepperSkyPanelOpen');
+        const shouldOpen = sessionPanel !== null ? sessionPanel === '1' : !!prefs.panelOpen;
+        setPanelOpen(shouldOpen, false);
       }
-      // Restore panel state from session or prefs
-      const sessionPanel = getSessionValue('pepperSkyPanelOpen');
-      const shouldOpen = sessionPanel !== null ? sessionPanel === '1' : !!prefs.panelOpen;
-      setPanelOpen(shouldOpen, false);
       syncSkyState();
     }
 
