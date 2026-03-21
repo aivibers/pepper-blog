@@ -20,7 +20,13 @@
       speed: 48,         // world units per second (3 tiles/sec)
       hp: 10,
       maxHp: 10,
+      swordDamage: 2,
       size: PLAYER_SIZE,
+      invincible: false,
+      invTimer: 0,
+      knockbackTimer: 0,
+      knockbackVx: 0,
+      knockbackVy: 0,
 
       /**
        * Update player position based on input and delta time.
