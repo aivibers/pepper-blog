@@ -845,7 +845,7 @@
       panel.classList.toggle('show', show);
       // Keep <details> always open so content is accessible; hide via CSS
       panel.open = true;
-      panel.style.display = show ? '' : 'none';
+      panel.style.display = show ? 'block' : 'none';
       starsPowerBtn.style.opacity = show ? '1' : '';
       if (persist && hasCookieConsent()) {
         setSessionValue('pepperSkyPanelOpen', show ? '1' : '0');
