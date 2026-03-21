@@ -415,6 +415,191 @@ function testCreateSceneUnknownType() {
   assertEqual(scene.name, 'Museum Gallery', 'unknown type defaults to museum');
 }
 
+/* ========== Test: Case 1 data validates — exactly one culprit ========== */
+
+function testCase1ExactlyOneCulprit() {
+  const loaded = loadCase(0);
+  assert(loaded !== null, 'loadCase(0) returns a valid result');
+
+  const caseData = loaded.caseData;
+  const characters = loaded.characters;
+
+  assertEqual(caseData.id, 'museum_heist', 'case 1 is museum_heist');
+  assert(characters.length === 18, `case 1 has 18 characters (got ${characters.length})`);
+
+  // Count characters matching ALL real clues
+  const realClues = caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const matches = characters.filter(c =>
+    realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+  assertEqual(matches.length, 1, 'case 1 has exactly 1 culprit matching all real clues');
+}
+
+/* ========== Test: Accusation logic — correct character ========== */
+
+function testAccusationCorrect() {
+  const loaded = loadCase(0);
+  const caseData = loaded.caseData;
+  const characters = loaded.characters;
+
+  // Find the culprit
+  const realClues = caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const culprit = characters.find(c =>
+    realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+
+  assert(culprit !== undefined, 'culprit found in characters');
+  const result = checkAccusation(culprit, caseData);
+  assertEqual(result, true, 'checkAccusation returns true for correct culprit');
+}
+
+/* ========== Test: Accusation logic — wrong character (partial match) ========== */
+
+function testAccusationWrongPartialMatch() {
+  const loaded = loadCase(0);
+  const caseData = loaded.caseData;
+  const characters = loaded.characters;
+
+  // Find a non-culprit character
+  const realClues = caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const nonCulprit = characters.find(c =>
+    !realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+
+  assert(nonCulprit !== undefined, 'non-culprit found in characters');
+  const result = checkAccusation(nonCulprit, caseData);
+  assertEqual(result, false, 'checkAccusation returns false for wrong character');
+}
+
+/* ========== Test: Star decrements on wrong accusation ========== */
+
+function testStarDecrement() {
+  // Save state
+  const origState = Object.assign({}, gameState);
+
+  // Set up a case scenario
+  const loaded = loadCase(0);
+  gameState.screen = STATES.INSPECT;
+  gameState.currentCase = loaded.caseData;
+  gameState.characters = loaded.characters;
+  gameState.stars = 3;
+
+  // Select a non-culprit
+  const realClues = loaded.caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const nonCulprit = loaded.characters.find(c =>
+    !realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+  gameState.selectedCharacter = nonCulprit;
+
+  handleAccuse();
+  assertEqual(gameState.stars, 2, 'stars decrement from 3 to 2 on wrong accusation');
+
+  // Restore state
+  Object.assign(gameState, origState);
+}
+
+/* ========== Test: Game over at 0 stars ========== */
+
+function testGameOverAtZeroStars() {
+  // Save state
+  const origState = Object.assign({}, gameState);
+
+  const loaded = loadCase(0);
+  gameState.screen = STATES.INSPECT;
+  gameState.currentCase = loaded.caseData;
+  gameState.characters = loaded.characters;
+  gameState.stars = 1; // Only 1 star left
+
+  // Select a non-culprit
+  const realClues = loaded.caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const nonCulprit = loaded.characters.find(c =>
+    !realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+  gameState.selectedCharacter = nonCulprit;
+
+  handleAccuse();
+  assertEqual(gameState.stars, 0, 'stars reach 0');
+  assertEqual(gameState.screen, STATES.FAILED, 'game over triggers FAILED state at 0 stars');
+
+  // Restore state
+  Object.assign(gameState, origState);
+}
+
+/* ========== Test: loadCase returns deterministic results ========== */
+
+function testLoadCaseDeterministic() {
+  const loaded1 = loadCase(0);
+  const loaded2 = loadCase(0);
+
+  assertEqual(loaded1.characters.length, loaded2.characters.length,
+    'loadCase deterministic character count');
+
+  // Same culprit attributes
+  const realClues = loaded1.caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  const culprit1 = loaded1.characters.find(c =>
+    realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+  const culprit2 = loaded2.characters.find(c =>
+    realClues.every(cl => c.attributes[cl.attribute] === cl.value)
+  );
+
+  assertEqual(culprit1.attributes.hat, culprit2.attributes.hat,
+    'loadCase deterministic culprit hat');
+  assertEqual(culprit1.attributes.glasses, culprit2.attributes.glasses,
+    'loadCase deterministic culprit glasses');
+  assertEqual(culprit1.attributes.holdingItem, culprit2.attributes.holdingItem,
+    'loadCase deterministic culprit holdingItem');
+}
+
+/* ========== Test: Case clue types ========== */
+
+function testCaseClueTypes() {
+  const caseData = CASES[0];
+  const realClues = caseData.clues.filter(
+    cl => cl.type !== 'redHerring' && cl.type !== 'flavor'
+  );
+  assert(realClues.length >= 3, 'case 1 has at least 3 real clues');
+
+  const redHerrings = caseData.clues.filter(cl => cl.type === 'redHerring');
+  assert(redHerrings.length >= 1, 'case 1 has at least 1 red herring');
+
+  // All real clues have attribute and value
+  for (const cl of realClues) {
+    assert(cl.attribute !== undefined, `real clue has attribute: "${cl.text}"`);
+    assert(cl.value !== undefined, `real clue has value: "${cl.text}"`);
+  }
+}
+
+/* ========== Test: Case data structure ========== */
+
+function testCaseDataStructure() {
+  assert(Array.isArray(CASES), 'CASES is an array');
+  assert(CASES.length >= 1, 'CASES has at least 1 case');
+
+  const c = CASES[0];
+  assert(typeof c.id === 'string', 'case has id');
+  assert(typeof c.title === 'string', 'case has title');
+  assert(typeof c.briefing === 'string', 'case has briefing');
+  assert(typeof c.scene === 'object', 'case has scene config');
+  assert(typeof c.scene.type === 'string', 'case scene has type');
+  assert(typeof c.scene.characterSlots === 'number', 'case scene has characterSlots');
+  assert(typeof c.culprit === 'object', 'case has culprit');
+  assert(Array.isArray(c.clues), 'case has clues array');
+  assert(typeof c.solution === 'string', 'case has solution');
+}
+
 /* ========== Run all tests ========== */
 
 function runAllTests() {
@@ -438,6 +623,16 @@ function runAllTests() {
   testCreateSceneLibrary();
   testCreateSceneDeterministic();
   testCreateSceneUnknownType();
+
+  // Task 03 tests — case validation
+  testCaseDataStructure();
+  testCaseClueTypes();
+  testCase1ExactlyOneCulprit();
+  testAccusationCorrect();
+  testAccusationWrongPartialMatch();
+  testStarDecrement();
+  testGameOverAtZeroStars();
+  testLoadCaseDeterministic();
 
   // Display results
   const container = document.getElementById('test-results');

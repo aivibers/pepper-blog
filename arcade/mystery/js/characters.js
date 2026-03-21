@@ -48,7 +48,7 @@ function colorName(hex) {
     '#f0883e': 'orange',   '#f85149': 'red',        '#7ee787': 'green',
     '#79c0ff': 'blue',     '#d2a8ff': 'purple',     '#ffa657': 'amber',
     '#8b949e': 'grey',     '#e6edf3': 'white',      '#484f58': 'dark grey',
-    '#da3633': 'crimson',
+    '#da3633': 'crimson',  '#8b0000': 'dark red',
   };
   return map[h] || hex;
 }

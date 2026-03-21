@@ -111,11 +111,34 @@ body {
 }
 
 #clue-list li::before {
-  content: '◆ ';
-  color: #f0883e;
+  content: '◇ ';
+  color: #8b949e;
 }
 
-#clue-list li.red-herring::before {
+#clue-list li.clue-match {
+  color: #7ee787;
+}
+
+#clue-list li.clue-match::before {
+  content: '◆ ';
+  color: #7ee787;
+}
+
+#clue-list li.clue-mismatch {
+  color: #f85149;
+  opacity: 0.7;
+}
+
+#clue-list li.clue-mismatch::before {
+  content: '◆ ';
+  color: #f85149;
+}
+
+#clue-list li.clue-neutral {
+  color: #8b949e;
+}
+
+#clue-list li.clue-neutral::before {
   content: '◇ ';
   color: #8b949e;
 }
@@ -136,25 +159,49 @@ body {
   margin-bottom: 0.3rem;
 }
 
-#suspect-info .suspect-attrs {
-  margin-bottom: 0.5rem;
+#suspect-info .suspect-desc {
+  margin-bottom: 0.8rem;
+  color: #e6edf3;
+  line-height: 1.5;
 }
 
-#suspect-info button {
-  background: #f85149;
+#suspect-info .suspect-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+#suspect-info .btn-accuse {
+  background: #f0883e;
   color: #fff;
   border: none;
-  padding: 0.4rem 1.2rem;
+  padding: 0.5rem 1.2rem;
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   border-radius: 4px;
   letter-spacing: 0.05em;
+  flex: 1;
 }
 
-#suspect-info button:hover {
-  background: #da3633;
+#suspect-info .btn-accuse:hover {
+  background: #d87830;
+}
+
+#suspect-info .btn-back {
+  background: #30363d;
+  color: #8b949e;
+  border: 1px solid #484f58;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+#suspect-info .btn-back:hover {
+  background: #484f58;
+  color: #e6edf3;
 }
 
 /* === Status Bar === */

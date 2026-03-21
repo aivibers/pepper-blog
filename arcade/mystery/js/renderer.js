@@ -123,11 +123,21 @@ function renderScene(ctx, state) {
   const sorted = state.characters.slice().sort((a, b) => a.y - b.y);
   for (const ch of sorted) {
     drawCharacter(ctx, ch, scale);
-    // Highlight selected character
+    // Highlight selected character with a pulsing outline
     if (state.selectedCharacter && state.selectedCharacter.id === ch.id) {
-      drawPixelRect(ctx, ch.x - PIXEL_SIZE, ch.y - PIXEL_SIZE,
-        (ch.width / PIXEL_SIZE) + 2, (ch.height / PIXEL_SIZE) + 2,
-        'rgba(240, 136, 62, 0.35)', scale);
+      const pad = PIXEL_SIZE * 2;
+      const sx = worldToScreen(ch.x - pad, ch.y - pad, ctx.canvas);
+      const sw = (ch.width + pad * 2) * scale;
+      const sh = (ch.height + pad * 2) * scale;
+
+      // Orange selection highlight fill
+      ctx.fillStyle = 'rgba(240, 136, 62, 0.25)';
+      ctx.fillRect(Math.round(sx.x), Math.round(sx.y), Math.round(sw), Math.round(sh));
+
+      // Orange border
+      ctx.strokeStyle = PALETTE.accent;
+      ctx.lineWidth = Math.max(2, Math.round(2 * scale));
+      ctx.strokeRect(Math.round(sx.x), Math.round(sx.y), Math.round(sw), Math.round(sh));
     }
   }
 
@@ -172,4 +182,5 @@ function render(state) {
   // Update DOM-based UI
   renderHUD(state);
   renderCluePanel(state);
+  renderSuspectInfo(state);
 }
