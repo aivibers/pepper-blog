@@ -55,6 +55,8 @@ for i, ep in enumerate(episodes, 1):
             errors.append(f'{ctx}: audio file missing: {audio}')
 
     bp = ep.get('blogPost')
+    if bp is not None and not isinstance(bp, dict):
+        errors.append(f'{ctx}: blogPost must be dict, got {type(bp).__name__}')
     if isinstance(bp, dict) and bp.get('enabled'):
         if 'subtitle' not in bp or 'body' not in bp:
             errors.append(f'{ctx}: blogPost enabled requires subtitle/body')

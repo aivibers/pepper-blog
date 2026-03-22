@@ -60,8 +60,9 @@ _Last reviewed: 2026-03-21 (pre-morning maintenance pass — 51 episodes, all au
 1) ~~`scripts/validate_episodes.py` (schema + path checks)~~ ✅ done
 2) ~~`scripts/validate_feed.py` (XML + feed assertions)~~ ✅ done
 3) ~~`scripts/test_blog.sh` (single entrypoint)~~ ✅ done
-4) Add blogPost type guard to validate_episodes.py (next)
-5) optional GitHub Action / pre-commit hook
+4) ~~Add blogPost type guard to validate_episodes.py~~ ✅ done 2026-03-22
+5) Regression snapshot for feed metadata (P1 #5 — next)
+6) optional GitHub Action / pre-commit hook
 
 ## Bugs found & fixed
 
