@@ -107,7 +107,7 @@ document.body.appendChild(deathScreen);
 // ── Title screen ──
 const titleScreen = document.getElementById('title-screen');
 
-renderer.domElement.addEventListener('click', () => {
+document.addEventListener('click', () => {
   if (gameState.screen === 'title') {
     gameState.screen = 'playing';
     titleScreen.style.display = 'none';

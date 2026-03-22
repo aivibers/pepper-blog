@@ -74,6 +74,15 @@
       }
     });
 
+    // Also listen for click/tap to start / restart (mobile + desktop)
+    document.addEventListener('click', function () {
+      if (state === STATES.TITLE) {
+        startGame();
+      } else if (state === STATES.DEAD) {
+        startGame();
+      }
+    });
+
     // Begin the game loop
     lastTime = performance.now();
     requestAnimationFrame(loop);
