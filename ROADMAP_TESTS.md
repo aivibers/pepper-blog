@@ -2,19 +2,20 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-21 (pre-morning maintenance pass — 51 episodes, all audio paths intact, feed.xml valid XML with 51 items, all tests passing. Fixed ep 051 blogPost type bug.)_
+_Last reviewed: 2026-03-23 (pre-morning maintenance — 59 episodes, 7 missing audio files for eps 052-058, feed.xml valid XML with 59 items. Fixed ep 051 blogPost type bug again.)_
 
 ## P0 (do first)
 
 1. **episodes.json schema validation (unit)** ✅ `scripts/validate_episodes.py`
-   - Validate required fields per episode: `id`, `title`, `show`, `emoji`, `date`, `audio`, `tags`, `transcript`.
+   - Validate required fields per episode: `id`, `title`, `show`, `emoji`, `date`, `audio`, `tags`, `transcript`, `featured`.
    - Validate types and formats:
      - `id`: 3-digit string (e.g. `008`)
      - `date`: `YYYY-MM-DD`
      - `audio`: site-root path (e.g. `/radio/segments/...`), no `..`, and no external URL unless explicitly allowed
      - `tags`: array of non-empty strings
+     - `featured`: boolean
    - Validate optional `blogPost` shape when enabled (`subtitle`, `body`).
-   - **TODO:** Add type assertion that `blogPost` is dict, not string (caught ep 051 bug 2026-03-21).
+   - ✅ blogPost type guard (assert dict, not string) — added 2026-03-22.
 
 2. **RSS generation validity (integration)** ✅ `scripts/validate_feed.py`
    - Generate `feed.xml` from `posts/episodes.json`.
@@ -38,13 +39,14 @@ _Last reviewed: 2026-03-21 (pre-morning maintenance pass — 51 episodes, all au
      - `pepper-avatar.png`
    - Validate RSS `<link rel="alternate" ... href="/feed.xml">` remains present.
 
-5. **Regression snapshot for feed metadata**
+5. **Regression snapshot for feed metadata** ← next up
    - Lock expected channel metadata (`title`, `description`, `itunes:image`, category).
    - Catch accidental metadata drift from script edits.
 
-6. **blogPost type guard**
-   - Add to `validate_episodes.py`: assert `blogPost` is `dict` (not `str`) when present.
+6. **blogPost type guard** ✅ done 2026-03-22
+   - Added to `validate_episodes.py`: assert `blogPost` is `dict` (not `str`) when present.
    - Prevents the serialized-string-instead-of-object bug found in ep 051.
+   - ⚠️ Bug recurred 2026-03-23 — need to investigate root cause (likely the episode creation pipeline serializes blogPost as JSON string).
 
 ## P2 (nice to have)
 
@@ -54,6 +56,12 @@ _Last reviewed: 2026-03-21 (pre-morning maintenance pass — 51 episodes, all au
 
 8. **Pre-commit guard (optional)**
    - Run P0 checks before commit when `posts/episodes.json` or `feed.xml` changes.
+   - Would have caught the recurring blogPost string bug.
+
+9. **Audio generation pipeline health check**
+   - Verify that episode creation workflow generates mp3 before setting audio path.
+   - Currently 7 episodes (052-058) have audio paths but no files on disk.
+   - Consider: don't set `audio` field until mp3 actually exists, or add a "pending" state.
 
 ## Suggested implementation order
 
@@ -61,11 +69,20 @@ _Last reviewed: 2026-03-21 (pre-morning maintenance pass — 51 episodes, all au
 2) ~~`scripts/validate_feed.py` (XML + feed assertions)~~ ✅ done
 3) ~~`scripts/test_blog.sh` (single entrypoint)~~ ✅ done
 4) ~~Add blogPost type guard to validate_episodes.py~~ ✅ done 2026-03-22
-5) Regression snapshot for feed metadata (P1 #5 — next)
-6) optional GitHub Action / pre-commit hook
+5) **Investigate blogPost string bug root cause** (recurred 2026-03-23 on ep 051)
+6) Regression snapshot for feed metadata (P1 #5)
+7) Audio pipeline: don't set `audio` field until mp3 exists
+8) optional GitHub Action / pre-commit hook
 
 ## Bugs found & fixed
 
 | Date | Issue | Fix |
 |------|-------|-----|
 | 2026-03-21 | ep 051 `blogPost` was JSON string, not object — blog post wouldn't render | Parsed string to object in episodes.json |
+| 2026-03-23 | ep 051 `blogPost` reverted to JSON string (recurrence) | Re-parsed string to object; root cause likely in episode creation pipeline |
+| 2026-03-23 | eps 052-058 have audio paths set but no mp3 files on disk | Flagged — needs TTS generation, not an auto-fix |
+
+## Known issues (not auto-fixable)
+
+- **7 missing audio files (052-058):** Episodes reference mp3 paths that don't exist on disk. Likely need TTS generation. Tests will fail on path integrity until resolved.
+- **blogPost string serialization:** The ep 051 blogPost bug has recurred — whatever creates episodes may be double-serializing the blogPost field. Needs pipeline investigation.
