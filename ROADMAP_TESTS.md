@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-23 (pre-morning maintenance — 59 episodes, 7 missing audio files for eps 052-058, feed.xml valid XML with 59 items. Fixed ep 051 blogPost type bug again.)_
+_Last reviewed: 2026-03-24 (morning maintenance — 59 episodes, 7 missing audio files for eps 052-058, feed.xml valid XML with 59 items matching episodes.json. No new schema issues. blogPost types all clean. Only test failure: missing audio 052-058.)_
 
 ## P0 (do first)
 
