@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-25 (morning maintenance — 59 episodes, 7 missing audio files for eps 052-058, feed.xml valid XML with 59 items matching episodes.json. No new schema issues. blogPost types all clean (ep 051 still dict, no recurrence). Only test failure: missing audio 052-058. No changes since 2026-03-24 commit.)_
+_Last reviewed: 2026-03-26 (morning maintenance — 71 episodes, 18 missing audio files for eps 052-058 + 060-070, feed.xml valid XML with 71 items matching episodes.json. Fixed ep 051 blogPost string→dict bug (4th recurrence). Only test failures: missing audio files. Committed fix + regen feed.)_
 
 ## P0 (do first)
 
@@ -81,8 +81,10 @@ _Last reviewed: 2026-03-25 (morning maintenance — 59 episodes, 7 missing audio
 | 2026-03-21 | ep 051 `blogPost` was JSON string, not object — blog post wouldn't render | Parsed string to object in episodes.json |
 | 2026-03-23 | ep 051 `blogPost` reverted to JSON string (recurrence) | Re-parsed string to object; root cause likely in episode creation pipeline |
 | 2026-03-23 | eps 052-058 have audio paths set but no mp3 files on disk | Flagged — needs TTS generation, not an auto-fix |
+| 2026-03-26 | ep 051 `blogPost` reverted to JSON string again (4th occurrence) | Re-parsed string to object; root cause is in episode creation pipeline |
+| 2026-03-26 | Missing audio count grew from 7 to 18 (eps 052-058, 060-070) | Flagged — new episodes added without TTS generation |
 
 ## Known issues (not auto-fixable)
 
-- **7 missing audio files (052-058):** Episodes reference mp3 paths that don't exist on disk. Likely need TTS generation. Tests will fail on path integrity until resolved.
-- **blogPost string serialization:** The ep 051 blogPost bug has recurred — whatever creates episodes may be double-serializing the blogPost field. Needs pipeline investigation.
+- **18 missing audio files (052-058, 060-070):** Episodes reference mp3 paths that don't exist on disk. Need TTS generation. Tests will fail on path integrity until resolved.
+- **blogPost string serialization:** The ep 051 blogPost bug has now recurred 4 times. Whatever creates episodes is double-serializing the blogPost field as a JSON string inside JSON. Needs pipeline-level fix (likely in the episode creation/append workflow). Consider adding a pre-commit hook or generation-time assertion.
