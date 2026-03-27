@@ -36,6 +36,27 @@ const weaponBob = {
   time: 0,
 };
 
+// ── WebGL check ──
+function checkWebGL() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'));
+  } catch (e) {
+    return false;
+  }
+}
+
+if (!checkWebGL()) {
+  const titleScreen = document.getElementById('title-screen');
+  if (titleScreen) {
+    titleScreen.querySelector('.prompt').textContent = '';
+    titleScreen.querySelector('.subtitle').textContent =
+      'WebGL is required but not available in this browser. Enable hardware acceleration or try a different browser.';
+    titleScreen.querySelector('.subtitle').style.color = '#ff6666';
+  }
+  throw new Error('WebGL not available');
+}
+
 // ── Three.js setup ──
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a0a2e);
