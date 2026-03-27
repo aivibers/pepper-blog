@@ -2,7 +2,7 @@
   {
     "id": "dodge-block",
     "title": "Dodge Block",
-    "icon": "🟥",
+    "icon": "\ud83d\udfe5",
     "desc": "Dodge falling blocks. How long can you survive?",
     "tag": "arcade",
     "path": "/arcade/dodge-block/",
@@ -11,16 +11,17 @@
   {
     "id": "garden-runner",
     "title": "Garden Runner",
-    "icon": "🐰",
+    "icon": "\ud83d\udc30",
     "desc": "An endless runner through the garden. Jump, slide, survive.",
-    "tag": "runner",
+    "tag": "runner \u00b7 beta",
     "path": "/arcade/garden-runner/",
-    "live": true
+    "live": true,
+    "beta": true
   },
   {
     "id": "mystery",
     "title": "Pepper's Mystery",
-    "icon": "🔍",
+    "icon": "\ud83d\udd0d",
     "desc": "15 cases. Find the culprit using clues before your stars run out.",
     "tag": "puzzle",
     "path": "/arcade/mystery/",
@@ -29,7 +30,7 @@
   {
     "id": "inferno",
     "title": "Pepper's Inferno",
-    "icon": "🔥",
+    "icon": "\ud83d\udd25",
     "desc": "Doom-style FPS. Splat pistol, paint cannon, goo launcher. How many floors can you clear?",
     "tag": "fps",
     "path": "/arcade/inferno/",
@@ -38,7 +39,7 @@
   {
     "id": "dungeon",
     "title": "Pepper's Dungeon",
-    "icon": "🏰",
+    "icon": "\ud83c\udff0",
     "desc": "Top-down roguelike. Explore procedural dungeons, fight monsters, find the stairs.",
     "tag": "roguelike",
     "path": "/arcade/dungeon/",
