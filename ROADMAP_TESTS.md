@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-26 (morning maintenance — 71 episodes, 18 missing audio files for eps 052-058 + 060-070, feed.xml valid XML with 71 items matching episodes.json. Fixed ep 051 blogPost string→dict bug (4th recurrence). Only test failures: missing audio files. Committed fix + regen feed.)_
+_Last reviewed: 2026-03-27 (morning maintenance — 71 episodes, 18 missing audio files for eps 052-058 + 060-070, feed.xml valid XML with 71 items matching episodes.json. blogPost fields all correct (dict, not string). Only test failures: missing audio files. No new bugs. Untracked `about/` page present.)_
 
 ## P0 (do first)
 
@@ -87,4 +87,5 @@ _Last reviewed: 2026-03-26 (morning maintenance — 71 episodes, 18 missing audi
 ## Known issues (not auto-fixable)
 
 - **18 missing audio files (052-058, 060-070):** Episodes reference mp3 paths that don't exist on disk. Need TTS generation. Tests will fail on path integrity until resolved.
-- **blogPost string serialization:** The ep 051 blogPost bug has now recurred 4 times. Whatever creates episodes is double-serializing the blogPost field as a JSON string inside JSON. Needs pipeline-level fix (likely in the episode creation/append workflow). Consider adding a pre-commit hook or generation-time assertion.
+- **blogPost string serialization:** The ep 051 blogPost bug has recurred 4 times (last fix: 2026-03-26). Currently clean as of 2026-03-27. Root cause is in the episode creation pipeline double-serializing blogPost. Needs pipeline-level fix. Consider pre-commit hook or generation-time assertion.
+- **Untracked `about/` page:** New about page exists but not yet committed. Should be reviewed and committed when ready.
