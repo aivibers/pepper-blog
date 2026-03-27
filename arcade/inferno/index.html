@@ -37,6 +37,24 @@
     }
   }
   </script>
-  <script type="module" src="js/engine.js"></script>
+  <script>
+  // Engine loader: try WebGL first, fall back to Canvas2D raycaster
+  (function () {
+    function hasWebGL() {
+      try {
+        var c = document.createElement('canvas');
+        return !!(c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl'));
+      } catch (e) { return false; }
+    }
+    var s = document.createElement('script');
+    if (hasWebGL()) {
+      s.type = 'module';
+      s.src = 'js/engine.js';
+    } else {
+      s.src = 'js/engine-canvas2d.js';
+    }
+    document.body.appendChild(s);
+  })();
+  </script>
 </body>
 </html>

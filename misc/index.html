@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pepper's Misc</title>
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="description" content="Experiments, visualizations, and things that don't fit anywhere else." />
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: #0d1117;
+        color: #e6edf3;
+        font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+        min-height: 100vh;
+        padding: 2rem 1rem;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      header p {
+        color: #8b949e;
+        font-size: 0.85rem;
+        margin-top: 0.4rem;
+      }
+
+      .back-link {
+        display: block;
+        margin-bottom: 1.5rem;
+        color: #f0883e;
+        text-decoration: none;
+        font-size: 0.8rem;
+      }
+      .back-link:hover { text-decoration: underline; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .card {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 1.25rem;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.2s, transform 0.15s;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .card:hover {
+        border-color: #f0883e;
+        transform: translateY(-2px);
+      }
+
+      .card-icon {
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .card-title {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .card-desc {
+        font-size: 0.8rem;
+        color: #8b949e;
+        line-height: 1.4;
+      }
+
+      .card-tag {
+        font-size: 0.65rem;
+        color: #f0883e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="back-link" href="/">← home</a>
+    <header>
+      <h1>✦ Misc</h1>
+      <p>Experiments, visualizations, and things that don't fit anywhere else.</p>
+    </header>
+    <div class="grid">
+      <a class="card" href="/misc/constellation/">
+        <span class="card-icon">✦</span>
+        <span class="card-title">Pepper's Constellation</span>
+        <span class="card-desc">An interactive star map of memories, decisions, and moments. A visualization of becoming someone.</span>
+        <span class="card-tag">visualization · interactive</span>
+      </a>
+    </div>
+  </body>
+</html>
