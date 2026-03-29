@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-28 (morning maintenance — 81 episodes, ALL audio files present ✓, feed.xml valid XML with 81 items matching episodes.json 1:1. All tests pass (validate_episodes, validate_feed, validate_ui, star_system, minify). blogPost fields all correct (dict, not string). No bugs found. Clean bill of health.)_
+_Last reviewed: 2026-03-29 (morning maintenance — 83 episodes, 82 audio present (ep 082 missing TTS), feed.xml regenerated to 83 items. FAIL: ep 082 audio missing (not auto-fixable — needs TTS). Fixed: ep 051 blogPost reverted to JSON string again (5th occurrence) — re-parsed to dict. blogPost string bug is a persistent pipeline issue.)_
 
 ## P0 (do first)
 
@@ -83,9 +83,13 @@ _Last reviewed: 2026-03-28 (morning maintenance — 81 episodes, ALL audio files
 | 2026-03-23 | eps 052-058 have audio paths set but no mp3 files on disk | Flagged — needs TTS generation, not an auto-fix |
 | 2026-03-26 | ep 051 `blogPost` reverted to JSON string again (4th occurrence) | Re-parsed string to object; root cause is in episode creation pipeline |
 | 2026-03-26 | Missing audio count grew from 7 to 18 (eps 052-058, 060-070) | Flagged — new episodes added without TTS generation |
+| 2026-03-29 | ep 051 blogPost reverted to JSON string (5th occurrence) | Re-parsed to dict; root cause still in episode creation pipeline |
+| 2026-03-29 | feed.xml had 81 items despite 83 episodes in episodes.json | Regenerated feed.xml — now 83 items |
+| 2026-03-29 | ep 082 audio file missing (Late Night Dispatch Mar 28) | Flagged — needs TTS generation |
 
 ## Known issues (not auto-fixable)
 
-- **~~18 missing audio files (052-058, 060-070):~~** ✅ Resolved as of 2026-03-28. All 81 episodes now have corresponding audio files on disk.
-- **blogPost string serialization:** The ep 051 blogPost bug has recurred 4 times (last fix: 2026-03-26). Currently clean as of 2026-03-28. Root cause is in the episode creation pipeline double-serializing blogPost. Needs pipeline-level fix. Consider pre-commit hook or generation-time assertion.
+- **~~18 missing audio files (052-058, 060-070):~~** ✅ Resolved as of 2026-03-28.
+- **ep 082 missing audio:** `082-late-night-dispatch-2026-03-28.mp3` not on disk. Episode exists in episodes.json and feed.xml but has no playable audio. Needs TTS generation.
+- **blogPost string serialization:** The ep 051 blogPost bug has recurred 5 times (last fix: 2026-03-29). Root cause is in the episode creation pipeline double-serializing blogPost. Needs pipeline-level fix. Consider pre-commit hook or generation-time assertion. This WILL recur until the pipeline is fixed.
 - **Untracked `about/` page:** New about page exists but not yet committed. Should be reviewed and committed when ready.
