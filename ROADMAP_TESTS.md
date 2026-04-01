@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-03-30 (morning maintenance — 85 episodes, 82 audio present, feed.xml regenerated to 85 items. FAIL: eps 082, 084, 085 audio missing (not auto-fixable — needs TTS generation). Fixed: ep 051 blogPost was JSON string again (6th occurrence) — re-parsed to dict + feed.xml regenerated. blogPost string bug is a persistent pipeline issue — needs upstream fix in TTS/generation script.)_
+_Last reviewed: 2026-04-01 (morning maintenance — 90 episodes, all tests green. Fixed: ep 051 blogPost was JSON string (7th occurrence) — re-parsed to dict. Copied 7 missing audio files (082, 084-089) from dashboard source. Regenerated feed.xml to 90 items. blogPost string serialization bug is a persistent pipeline issue — needs upstream fix in TTS/generation script.)_
 
 ## P0 (do first)
 
