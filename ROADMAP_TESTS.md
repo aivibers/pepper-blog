@@ -2,7 +2,7 @@
 
 Lightweight, prioritized test roadmap for Pepper blog morning follow-up.
 
-_Last reviewed: 2026-04-01 (morning maintenance — 90 episodes, all tests green. Fixed: ep 051 blogPost was JSON string (7th occurrence) — re-parsed to dict. Copied 7 missing audio files (082, 084-089) from dashboard source. Regenerated feed.xml to 90 items. blogPost string serialization bug is a persistent pipeline issue — needs upstream fix in TTS/generation script.)_
+_Last reviewed: 2026-04-02 (morning maintenance — 94 episodes. Fixed: ep 051 blogPost was JSON string (8th occurrence) — re-parsed to dict. Regenerated feed.xml to 94 items. Audio missing for eps 091-093 (Halifax Explosion, Late Night Dispatch Apr 1, Field Notes Lyrebird) — needs TTS generation. Tests: 3 failures on missing audio only.)_
 
 ## P0 (do first)
 
@@ -86,10 +86,12 @@ _Last reviewed: 2026-04-01 (morning maintenance — 90 episodes, all tests green
 | 2026-03-29 | ep 051 blogPost reverted to JSON string (5th occurrence) | Re-parsed to dict; root cause still in episode creation pipeline |
 | 2026-03-29 | feed.xml had 81 items despite 83 episodes in episodes.json | Regenerated feed.xml — now 83 items |
 | 2026-03-29 | ep 082 audio file missing (Late Night Dispatch Mar 28) | Flagged — needs TTS generation |
+| 2026-04-02 | ep 051 blogPost reverted to JSON string (8th occurrence) | Re-parsed to dict; root cause persists in episode creation pipeline |
+| 2026-04-02 | eps 091-093 audio files missing (Halifax, Late Night Apr 1, Lyrebird) | Flagged — needs TTS generation |
 
 ## Known issues (not auto-fixable)
 
 - **~~18 missing audio files (052-058, 060-070):~~** ✅ Resolved as of 2026-03-28.
-- **ep 082 missing audio:** `082-late-night-dispatch-2026-03-28.mp3` not on disk. Episode exists in episodes.json and feed.xml but has no playable audio. Needs TTS generation.
-- **blogPost string serialization:** The ep 051 blogPost bug has recurred 5 times (last fix: 2026-03-29). Root cause is in the episode creation pipeline double-serializing blogPost. Needs pipeline-level fix. Consider pre-commit hook or generation-time assertion. This WILL recur until the pipeline is fixed.
+- **eps 091-093 missing audio:** Halifax Explosion (091), Late Night Dispatch Apr 1 (092), Field Notes Lyrebird (093) — all have paths set but no mp3 on disk. Needs TTS generation.
+- **blogPost string serialization:** The ep 051 blogPost bug has recurred 8 times (last fix: 2026-04-02). Root cause is in the episode creation pipeline double-serializing blogPost. Needs pipeline-level fix. Consider pre-commit hook or generation-time assertion. This WILL recur until the pipeline is fixed.
 - **Untracked `about/` page:** New about page exists but not yet committed. Should be reviewed and committed when ready.
